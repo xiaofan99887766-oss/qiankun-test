@@ -1447,6 +1447,14 @@ function detectWallets() {
   push("wc", "WalletConnect", t("wallet.descWC"), "🔗", null, false);
   return list;
 }
+function quickConnect() {
+  // 一键连接：检测到注入钱包就直接连（优先当前正在用的那个钱包），
+  // 不再弹选择列表；只有完全没检测到钱包时才打开列表给提示。
+  const usable = detectWallets().filter((w) => w.prov);
+  if (!usable.length) { openWalletModal(); return; }
+  const w = usable.find((x) => x.detected) || usable[0];
+  connectWallet(w);
+}
 function openWalletModal() {
   const box = $("walletOpts");
   box.innerHTML = "";
@@ -1587,7 +1595,7 @@ async function confirmBindReferrer() {
 }
 async function doBet() {
   // 点下单按顺序处理：没连钱包先弹连接钱包，没部署合约先提示，条件满足才真正下单
-  if (!S.account) { openWalletModal(); toast(t("err.connect")); return; }
+  if (!S.account) { quickConnect(); toast(t("err.connect")); return; }
   if (!CONFIG.CONTRACT_ADDRESS || !S.contract) { toast(t("err.notDeployed")); return; }
   if (TOKEN_NOT_CONFIGURED) { toast(t("toast.tokenNotConfigured")); return; } // M-3：测试网代币未配置，拦截下注
   const err = validateBet();
@@ -1632,7 +1640,7 @@ async function doBet() {
   }
 }
 async function doDeposit() {
-  if (!S.account) { openWalletModal(); toast(t("err.connect")); return; }
+  if (!S.account) { quickConnect(); toast(t("err.connect")); return; }
   if (!CONFIG.CONTRACT_ADDRESS || !S.contract) { toast(t("err.notDeployed")); return; }
   if (TOKEN_NOT_CONFIGURED) { toast(t("toast.tokenNotConfigured")); return; } // M-3：测试网代币未配置，拦截充值
   const amt = parseFloat($("depositAmt").value);
@@ -1665,7 +1673,7 @@ async function doDeposit() {
   }
 }
 async function doWithdraw() {
-  if (!S.account) { openWalletModal(); toast(t("err.connect")); return; }
+  if (!S.account) { quickConnect(); toast(t("err.connect")); return; }
   if (!CONFIG.CONTRACT_ADDRESS || !S.contract) { toast(t("err.notDeployed")); return; }
   if (TOKEN_NOT_CONFIGURED) { toast(t("toast.tokenNotConfigured")); return; } // M-3：测试网代币未配置，拦截提现
   const input = parseFloat($("withdrawAmt").value);
@@ -2176,7 +2184,7 @@ function enterArena() {
 function bindUI() {
   $("modeSpeed").onclick = () => setMode("speed");
   $("modeClassic").onclick = () => setMode("classic");
-  $("connectBtn").onclick = openWalletModal;
+  $("connectBtn").onclick = quickConnect;
   $("modalClose").onclick = closeWalletModal;
   $("walletModal").onclick = (e) => { if (e.target === $("walletModal")) closeWalletModal(); };
   $("pickLong").onclick = () => setSide("long");
