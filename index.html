@@ -1287,7 +1287,7 @@ function currentRound() {
   return { roundId, start, lockAt, end, nowSec };
 }
 function roundTitle(id) {
-  return t("round.new", { id }) + " · " + (S.mode === "speed" ? t("mode.speedShort") : t("mode.classicShort"));
+  return t("round.new", { id }) + " · " + (S.mode === "speed" ? t("mode.speedShort") : S.mode === "mid" ? t("mode.midShort") : t("mode.classicShort"));
 }
 function tickRound() {
   if (S.contract && chainRound) { tickChainRound(); return; }
@@ -1984,7 +1984,7 @@ function showRoundTransition(id) {
   const rt = $("roundTrans");
   if (!rt) return;
   $("rtWord").textContent = t("round.new", { id });
-  $("rtSub").textContent = S.mode === "speed" ? t("mode.speedShort") : t("mode.classicShort");
+  $("rtSub").textContent = S.mode === "speed" ? t("mode.speedShort") : S.mode === "mid" ? t("mode.midShort") : t("mode.classicShort");
   rt.classList.add("show");
   setTimeout(() => rt.classList.remove("show"), 900);
 }
