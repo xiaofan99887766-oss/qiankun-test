@@ -403,7 +403,7 @@ body{padding-bottom:78px}
 .road-card{max-height:none}
 .side-btn .s-odds,.side-btn .s-pool{display:none}
 /* 终局覆盖：!important 收尾，前面任何同名规则不再生效 */
-.road-grid{display:grid !important;grid-template-rows:repeat(6,25px) !important;grid-auto-flow:column !important;grid-auto-columns:25px !important;gap:4px !important;overflow-x:auto !important;justify-content:start !important;padding:2px 0 !important;margin-top:6px !important;min-height:0 !important}
+.road-grid{display:grid !important;grid-template-rows:repeat(6,25px) !important;grid-auto-flow:column !important;grid-auto-columns:25px !important;gap:4px !important;overflow-x:auto !important;overflow-y:hidden !important;justify-content:start !important;padding:2px 0 !important;margin-top:6px !important;min-height:0 !important}
 .road-grid .rdot{width:25px !important;height:25px !important}
 
 .stat-k{font-size:11px;color:var(--muted);order:1}
@@ -495,7 +495,7 @@ body.no-fx .src-dot{animation:none!important}
       <input type="range" id="bgmVol" class="vol" min="0" max="100" value="80" aria-label="音量 / Volume">
       <button class="mini-btn" id="fxBtn" title="特效开关 / Effects">✨ 特效</button>
     </div>
-    <div class="hdr-stats"><span data-i18n="stats.hdrRounds">已结算局数</span> <b id="statRounds">—</b><br><span data-i18n="stats.pool">累计派奖</span> <b id="statPool">—</b></div>
+    <div class="hdr-stats"><span data-i18n="stats.hdrRounds">已结算局数</span> <b id="statRounds">—</b><br><span data-i18n="stats.pool">累计派奖</span> <b id="statPool">0 $SI</b></div>
     <button class="btn-connect" id="connectBtn" data-i18n="top.connect">连接钱包</button>
   </div></header>
 
@@ -2649,7 +2649,14 @@ function drawLine() {
   const t1 = now + 5000;
   if (!S.linePts || !S.linePts.length) rebuildLineTicks();
   const livePts = S.ticks.filter((k) => k.t >= t0 - 30000 && k.t <= now + 1000);
-  let pts = livePts.length >= 30 ? livePts : ((S.linePts && S.linePts.length >= 8) ? S.linePts.slice() : livePts);
+  // 混合序列：蜡烛采样点打底 + 实时 tick 点覆盖同一时间段——两侧同价同轴，线条连续不断层
+  let pts;
+  {
+    const base = (S.linePts || []).filter((k) => k.t >= t0 - 30000 && k.t <= now + 1000);
+    const firstLive = livePts.length ? livePts[0].t : Infinity;
+    pts = base.filter((k) => k.t < firstLive - 1000).concat(livePts);
+    if (pts.length < 8) pts = livePts.length ? livePts : base;
+  }
   // 轴钳制：窗口内价格先按四分位距收边，单个坏 tick 被压回正常带，画不出满幅针
   {
     const wp = pts.filter((k) => k.t >= t0).map((k) => k.p).sort((a, b) => a - b);
@@ -2681,6 +2688,8 @@ function drawLine() {
   if (!isFinite(hi)) { hi = S.price; lo = S.price; }
   if (S.chartLock) { hi = Math.max(hi, S.chartLock.price); lo = Math.min(lo, S.chartLock.price); }
   hi = Math.max(hi, S.price); lo = Math.min(lo, S.price);
+  // 轴必须盖住全部钳制后的画线点（含当前价），线不出界、不切边
+  for (const k of pts) { if (k.t >= t0) { if (k.p > hi) hi = k.p; if (k.p < lo) lo = k.p; } }
   const padV = Math.max((hi - lo) * 0.07, S.price * 0.000025);
   hi += padV; lo -= padV;
   if (!S.axis) S.axis = { hi, lo };
