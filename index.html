@@ -2628,7 +2628,9 @@ function rebuildLineTicks() {
   const cs = S.candles.slice(-15);
   const pts = [];
   for (const c of cs) {
-    pts.push({ t: c.t, p: c.o }, { t: c.t + 20000, p: c.l }, { t: c.t + 40000, p: c.h }, { t: c.t + 59999, p: c.c });
+    const bandHi = Math.max(c.o, c.c) * 1.0025, bandLo = Math.min(c.o, c.c) * 0.9975;
+    const hh = Math.min(c.h, bandHi), ll = Math.max(c.l, bandLo);
+    pts.push({ t: c.t, p: c.o }, { t: c.t + 20000, p: ll }, { t: c.t + 40000, p: hh }, { t: c.t + 59999, p: c.c });
   }
   pts.sort((a, b) => a.t - b.t);
   S.linePts = pts;
@@ -2647,7 +2649,7 @@ function drawLine() {
   const win = S.viewWin;
   const t0 = now - 900000;
   const t1 = now + 5000;
-  if (!S.linePts || !S.linePts.length) rebuildLineTicks();
+  rebuildLineTicks();
   const livePts = S.ticks.filter((k) => k.t >= t0 - 30000 && k.t <= now + 1000);
   // 混合序列：蜡烛采样点打底 + 实时 tick 点覆盖同一时间段——两侧同价同轴，线条连续不断层
   let pts;
@@ -2696,6 +2698,7 @@ function drawLine() {
   S.axis.hi += (hi - S.axis.hi) * 0.22;
   S.axis.lo += (lo - S.axis.lo) * 0.22;
   hi = S.axis.hi; lo = S.axis.lo;
+  for (const k of pts) { if (k.t >= t0) { if (k.p > hi) hi = k.p; if (k.p < lo) lo = k.p; } }
   const y = (v) => padT + (1 - (v - lo) / (hi - lo)) * (H - padT - padB);
   const x0 = padL, x1 = W - padR;
   const tx = (ms) => x0 + Math.max(0, Math.min(1, (ms - t0) / (t1 - t0))) * (x1 - x0);
@@ -2865,7 +2868,7 @@ function renderStats() {
   const rounds = cs ? cs.rounds : S.stats.rounds;
   const paid = cs ? cs.paid : S.stats.paid;
   r.textContent = rounds > 0 ? String(rounds) : "—";
-  p.textContent = cs ? fmt(Math.round(paid)) + " $SI" : (paid > 0 ? fmt(Math.round(paid)) + " $SI" : "—");
+  p.textContent = fmt(Math.round(paid)) + " $SI";
 }
 function renderRoad() {
   const g = $("roadGrid");
