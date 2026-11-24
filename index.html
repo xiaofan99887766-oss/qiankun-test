@@ -381,7 +381,7 @@ body.no-fx .src-dot{animation:none!important}
   <div>
   <!-- ===== K 线图 ===== -->
   <section class="chart-card" id="chartCard">
-    <div class="chart-head"><h2 data-i18n="chart.title">📈 BTC/USDT · 5 秒 K 线</h2>
+    <div class="chart-head"><h2 data-i18n="chart.title">📈 BTC/USDT · 1 分钟 K 线</h2>
       <span class="round-id" id="roundId">第 — 局</span>
       <span class="chart-legend"><span class="lg-up">■ <span data-i18n="chart.up">涨</span></span> <span class="lg-down">■ <span data-i18n="chart.down">跌</span></span> <span id="chartSrc">—</span></span></div>
     <div class="lock-price"><span data-i18n="price.lock">锁定价</span> <b id="lockPrice">—</b>　·　<span data-i18n="price.cur">当前价</span> <b id="curPrice2">—</b>　·　<span data-i18n="price.chg">涨跌</span> <b id="chgNow">—</b></div>
@@ -750,7 +750,7 @@ zh: {
 "about.text":"多空对决，$SI 链上下注：1 分钟极速局与 5 分钟经典局，赢家分输家池，每局抽 5%（2% 销毁、2% 邀请返佣、1% 运营），纯链上结算。","about.textClassic":"多空对决，$SI 链上下注：5 分钟经典局，赢家分输家池，每局抽 5%（2% 销毁、2% 邀请返佣、1% 运营），纯链上结算。",
 "modal.title":"连接钱包","modal.desc":"请选择你要使用的钱包。仅支持 BSC 链（测试网 chainId 97，部署后可切主网 56）。本站绝不会索要私钥、助记词或密码。","modal.cancel":"取消",
 "footer.text":"乾坤战场 QIANKUN ARENA · $SI 链上下注 v1<br>行情：币安优先 · Bitget 备用 · Gate 兜底 · 结算锚：Chainlink BTC/USD（链上）",
-"chart.title":"📈 BTC/USDT · 5 秒 K 线","chart.up":"涨","chart.down":"跌","chart.waiting":"等待行情…",
+"chart.title":"📈 BTC/USDT · 1 分钟 K 线","chart.up":"涨","chart.down":"跌","chart.waiting":"等待行情…",
 "chart.win":"赢","chart.lose":"输","chart.draw":"平局","chart.lockPrice":"锁定价","chart.closePrice":"收盘价",
 "phase.betting":"下注进行中","phase.locked":"已锁定 · 等待结算",
 "cd.cutoff":"下注截止","cd.locked":"下注已截止","cd.lockSoon":"锁定前 15 秒停止下注，请尽快确认",
@@ -826,7 +826,7 @@ en: {
 "about.text":"Long vs Short, bet with $SI on-chain: 1-min Speed and 5-min Classic rounds, winners split the losers' pool, 5% fee per round (2% burn, 2% referral, 1% ops), fully on-chain settlement.","about.textClassic":"Long vs Short, bet with $SI on-chain: 5-min Classic rounds, winners split the losers' pool, 5% fee per round (2% burn, 2% referral, 1% ops), fully on-chain settlement.",
 "modal.title":"Connect Wallet","modal.desc":"Pick a wallet. BSC only (testnet chainId 97; mainnet 56 after launch). We will never ask for your private key, seed phrase or password.","modal.cancel":"Cancel",
 "footer.text":"QIANKUN ARENA · $SI On-Chain Prediction v1<br>Price: Binance first · Bitget backup · Gate fallback · Settlement anchor: Chainlink BTC/USD (on-chain)",
-"chart.title":"📈 BTC/USDT · 5s Candles","chart.up":"Up","chart.down":"Down","chart.waiting":"Waiting for price feed…",
+"chart.title":"📈 BTC/USDT · 1m Candles","chart.up":"Up","chart.down":"Down","chart.waiting":"Waiting for price feed…",
 "chart.win":"WIN","chart.lose":"LOSE","chart.draw":"DRAW","chart.lockPrice":"LOCK","chart.closePrice":"CLOSE",
 "phase.betting":"Betting Open","phase.locked":"Locked · Settling",
 "cd.cutoff":"Betting Closes In","cd.locked":"Betting Closed","cd.lockSoon":"Betting stops 15s before lock — confirm soon",
@@ -1998,11 +1998,11 @@ function beepCountdown(kind, left) {
   o.start(when); o.stop(when + 0.2);
 }
 
-/* ---------------- K 线图：5 秒蜡烛，取自现有逐笔价流 ----------------
+/* ---------------- K 线图：1 分钟蜡烛，打开先从交易所回填最近 60 根历史 K 线，再由逐笔价流实时更新当前蜡烛 ----------------
    中继 / Vision / Bitget / Gate 任一源的 tick 都进同一聚合器，换源不断线；
    无 tick 时显示“等待行情”占位，绝不白屏；canvas 自绘（无外部图表库），
    devicePixelRatio 处理，宽度自适应，高 200px；重绘节流 500ms 一次。 */
-const KLINE = { bucket: 5000, max: 120, dirty: false };
+const KLINE = { bucket: 60000, max: 60, dirty: false };
 function intakeCandle(p) {
   const now = Date.now();
   const b = Math.floor(now / KLINE.bucket) * KLINE.bucket;
@@ -2020,6 +2020,38 @@ function intakeCandle(p) {
   KLINE.dirty = true;
   const em = $("chartEmpty");
   if (em) em.classList.add("hide");
+}
+async function seedKlines() {
+  // 打开页面先回填历史 K 线，图表立刻是满的，不用等逐笔攒。
+  // 源顺序与价格源一致：Bitget → Gate → Binance Vision；任一成功即停。
+  const lim = KLINE.max;
+  const srcs = [
+    { u: "https://api.bitget.com/api/v2/spot/market/candles?symbol=BTCUSDT&granularity=1min&limit=" + lim,
+      parse: (j) => ((j && j.data) || []).map((r) => ({ t: +r[0], o: +r[1], h: +r[2], l: +r[3], c: +r[4], n: 1 })) },
+    { u: "https://api.gateio.ws/api/v4/spot/candlesticks?currency_pair=BTC_USDT&interval=1m&limit=" + lim,
+      parse: (j) => (Array.isArray(j) ? j : []).map((r) => ({ t: +r[0] * 1000, o: +r[5], h: +r[3], l: +r[4], c: +r[2], n: 1 })) },
+    { u: "https://data-api.binance.vision/api/v3/klines?symbol=BTCUSDT&interval=1m&limit=" + lim,
+      parse: (j) => (Array.isArray(j) ? j : []).map((r) => ({ t: +r[0], o: +r[1], h: +r[2], l: +r[3], c: +r[4], n: 1 })) },
+  ];
+  for (const s of srcs) {
+    try {
+      const r = await fetch(s.u);
+      if (!r.ok) continue;
+      let rows = s.parse(await r.json())
+        .filter((c) => isFinite(c.t) && isFinite(c.o) && isFinite(c.c) && c.o > 0)
+        .sort((a, b) => a.t - b.t);
+      const nowB = Math.floor(Date.now() / KLINE.bucket) * KLINE.bucket;
+      rows = rows.map((c) => ({ t: Math.floor(c.t / KLINE.bucket) * KLINE.bucket, o: c.o, h: c.h, l: c.l, c: c.c, n: 1 }))
+        .filter((c) => c.t <= nowB)
+        .filter((c, i, a) => i === 0 || c.t !== a[i - 1].t);
+      if (rows.length < 10) continue;
+      const live = S.candles.filter((c) => c.t > rows[rows.length - 1].t);
+      S.candles = rows.concat(live).slice(-KLINE.max);
+      KLINE.dirty = true;
+      drawKline();
+      return;
+    } catch (e) { /* 换下一个源 */ }
+  }
 }
 function sizeKline() {
   const cv = $("kline");
@@ -2303,6 +2335,7 @@ function init() {
   safeStep("betBtn", updateBetBtn);
   safeStep("source", () => startSim()); // 打开先跑模拟价兜底，价格/K线立刻有数
   safeStep("provider", () => connectProvider(0));
+  safeStep("klineSeed", () => { seedKlines(); });
   safeStep("poll24h", poll24h);
   setInterval(poll24h, 30000);
   safeStep("tickRound", tickRound);
