@@ -1095,13 +1095,28 @@ function intakeTrade(isBuy, price, qty) {
 }
 let _suspectTick = null;
 function notePrice(p, fromSim) {
-  // 真行情一到就停模拟价，马上换真价；模拟 tick 自己带 fromSim=true，不会自己停自己
-  if (!fromSim) stopSim();
+  // 模拟价只配更新顶部数字，绝不写进价格序列——历史上模拟段（61000 起步的随机游走）
+  // 混进真实 K 线种子，就是那根"会走路的尖峰"的真身。真价一到序列里只有真价。
+  if (fromSim) {
+    S.price = p;
+    const _pe = $("price"); if (_pe) _pe.textContent = fmtPrice(p);
+    const _cp = $("curPrice2"); if (_cp) _cp.textContent = fmtPrice(p);
+    return;
+  }
+  // 真行情一到就停模拟价，马上换真价
+  stopSim();
   // 异常跳变过滤：单笔偏离上价 >0.5% 先扣下，下一笔同向确认才放行，防喂价切换的坏 tick 把图轴拉扁
   if (!fromSim && S.price && Math.abs(p - S.price) / S.price > 0.005) {
     if (_suspectTick && Math.abs(p - _suspectTick) / _suspectTick < 0.001) _suspectTick = null;
     else { _suspectTick = p; return; }
   } else _suspectTick = null;
+  if (!S._realSeen) {
+    S._realSeen = true;
+    // 首笔真价：模拟期残留的点（偏离真价 >0.3%）一律清出序列与 K 线
+    S.ticks = S.ticks.filter((tk) => Math.abs(tk.p - p) / p <= 0.003);
+    S.candles = S.candles.filter((cd) => Math.abs(cd.c - p) / p <= 0.005);
+    if (typeof rebuildLineTicks === "function") rebuildLineTicks();
+  }
   S.price = p;
   const pel = $("price");
   pel.textContent = fmtPrice(p);
