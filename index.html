@@ -386,7 +386,7 @@ body{padding-bottom:78px}
 .chart-card{padding:2px 2px 4px}
 .chart-state{font-size:15px}
 #kline{height:300px}
-.road-grid{grid-template-rows:repeat(6,25px);grid-auto-columns:25px;gap:4px}
+.road-grid{grid-template-rows:repeat(2,25px);grid-auto-columns:25px;gap:4px}
 .rdot{width:25px;height:25px}
 .rdot.new{box-shadow:0 0 0 5px rgba(255,255,255,.13)}
 .side-btn{transform:skewX(-9deg);border-radius:9px;padding:15px 8px}
@@ -403,7 +403,7 @@ body{padding-bottom:78px}
 .road-card{max-height:none}
 .side-btn .s-odds,.side-btn .s-pool{display:none}
 /* 终局覆盖：!important 收尾，前面任何同名规则不再生效 */
-.road-grid{display:grid !important;grid-template-rows:repeat(6,25px) !important;grid-auto-flow:column !important;grid-auto-columns:25px !important;gap:4px !important;overflow-x:auto !important;overflow-y:hidden !important;justify-content:start !important;padding:2px 0 !important;margin-top:6px !important;min-height:0 !important}
+.road-grid{display:grid !important;grid-template-rows:repeat(2,25px) !important;grid-auto-flow:column !important;grid-auto-columns:25px !important;gap:4px !important;overflow-x:auto !important;overflow-y:hidden !important;justify-content:start !important;padding:2px 0 !important;margin-top:6px !important;min-height:0 !important}
 .road-grid .rdot{width:25px !important;height:25px !important}
 
 .stat-k{font-size:11px;color:var(--muted);order:1}
@@ -2628,9 +2628,10 @@ function rebuildLineTicks() {
   const cs = S.candles.slice(-15);
   const pts = [];
   for (const c of cs) {
-    const bandHi = Math.max(c.o, c.c) * 1.0025, bandLo = Math.min(c.o, c.c) * 0.9975;
-    const hh = Math.min(c.h, bandHi), ll = Math.max(c.l, bandLo);
-    pts.push({ t: c.t, p: c.o }, { t: c.t + 20000, p: ll }, { t: c.t + 40000, p: hh }, { t: c.t + 59999, p: c.c });
+    const ocHi = Math.max(c.o, c.c), ocLo = Math.min(c.o, c.c);
+    const hh = Math.min(c.h, ocHi * 1.0025), ll = Math.max(c.l, ocLo * 0.9975);
+    const mid = Math.abs(hh - ll) < 1 ? c.c : (hh + ll) / 2;
+    pts.push({ t: c.t, p: c.o }, { t: c.t + 30000, p: mid }, { t: c.t + 59999, p: c.c });
   }
   pts.sort((a, b) => a.t - b.t);
   S.linePts = pts;
@@ -2873,18 +2874,18 @@ function renderStats() {
 function renderRoad() {
   const g = $("roadGrid");
   if (!g) return;
-  const rs = (S.rounds || []).filter((r) => r.result).slice(0, 60).reverse();
+  const rs = (S.rounds || []).filter((r) => r.result).slice(0, 120).reverse();
   if (!rs.length) { g.innerHTML = '<span class="road-empty">' + t("road.empty") + "</span>"; return; }
   const cols = [];
   let cur = null, curRes = null;
   for (const r of rs) {
     if (r.result === "draw") {
       if (!cur) { cur = []; cols.push(cur); curRes = null; }
-      if (cur.length >= 6) { cur = []; cols.push(cur); }
+      if (cur.length >= 2) { cur = []; cols.push(cur); }
       cur.push(r);
       continue;
     }
-    if (!cur || curRes !== r.result || cur.length >= 6) { cur = []; cols.push(cur); curRes = r.result; }
+    if (!cur || curRes !== r.result || cur.length >= 2) { cur = []; cols.push(cur); curRes = r.result; }
     cur.push(r);
   }
   let html = "";
@@ -2893,7 +2894,7 @@ function renderRoad() {
       const isNew = ci === cols.length - 1 && ri === col.length - 1;
       html += '<span class="rdot ' + r.result + (isNew ? " new" : "") + '"></span>';
     });
-    for (let k = col.length; k < 6; k++) html += '<span class="rdot empty"></span>';
+    for (let k = col.length; k < 2; k++) html += '<span class="rdot empty"></span>';
   });
   g.innerHTML = html;
   g.scrollLeft = g.scrollWidth;
