@@ -456,6 +456,7 @@ body.no-fx .src-dot{animation:none!important}
 @media (prefers-reduced-motion: reduce){
   .ceremony .cflag,.ceremony .cword{animation-duration:.01s!important;animation-iteration-count:1!important}
 }
+html{scrollbar-gutter:stable}
 </style>
 </head>
 <body>
@@ -558,7 +559,7 @@ body.no-fx .src-dot{animation:none!important}
       <div class="calc-row"><span class="k" data-i18n="calc.win">若获胜，预计到手</span><span class="v win" id="expectedReturn">—</span></div>
       <div class="calc-row total"><span class="k" data-i18n="calc.profit">预计净收益</span><span class="v" id="expectedProfit">—</span></div>
     </div>
-    <div class="fee-note" style="display:none" data-i18n-html="bet.note">下注从产品内余额扣：先充值（approve 仅本次充值金额），再调合约 <b>placeBet</b>，不再每注从钱包转币。平台费 5% 与链上 gas 均由玩家承担，BSC 单笔 gas 约 0.2–0.3 美元。</div>
+    <div class="fee-note" style="display:none" data-i18n-html="bet.note">下注直接从钱包扣 $SI：首次授权一次，之后点看涨/看跌确认一次即成。平台费 5% 与链上 gas 均由玩家承担。</div>
     <div class="err" id="betErr"></div>
     <button class="btn-bet long" id="betBtn" style="display:none">↗ 看涨下单</button>
 
@@ -585,17 +586,13 @@ body.no-fx .src-dot{animation:none!important}
     <h2><span data-i18n="wallet.title">👛 我的钱包</span> <span class="tag" id="chainTag">BSC 测试网</span></h2>
     <div class="wallet-grid">
       <div class="w-stat"><div class="lbl" data-i18n="wallet.si"> $SI 钱包余额</div><div class="val" id="siBalance">—</div></div>
-      <div class="w-stat"><div class="lbl" data-i18n="wallet.internal">产品内余额</div><div class="val" id="contractBalance">—</div></div>
+      <div class="w-stat"><div class="lbl" data-i18n="wallet.internal">待领取（赢利/返佣）</div><div class="val" id="contractBalance">—</div></div>
       <div class="w-stat"><div class="lbl">BNB 余额</div><div class="val" id="bnbBalance">—</div></div>
       <div class="w-stat"><div class="lbl" data-i18n="wallet.myBet">本局已下注</div><div class="val" id="myRoundBet">0 <small>$SI</small></div></div>
       <div class="w-stat"><div class="lbl" data-i18n="wallet.rebate">累计返佣（待提）</div><div class="val" id="myRebate">—</div></div>
     </div>
     <div class="w-addr" id="walletAddr">未连接钱包。支持 MetaMask、OKX 钱包、TP 钱包、币安钱包。</div>
-    <div class="input-line">
-      <input id="depositAmt" type="number" min="0" step="1000" placeholder="充值金额（$SI）" data-i18n-ph="wallet.depositPh">
-      <button class="btn-ghost" id="depositBtn" data-i18n="wallet.deposit">充值</button>
-    </div>
-    <div class="fee-note" data-i18n="wallet.depositNote">充值：先 approve 仅本次金额，再调合约 deposit() 存入产品内余额；下注从产品内余额扣，不再每注转币。赢利、返佣、退款都进产品内余额，随时提现。</div>
+    <div class="fee-note" data-i18n="wallet.depositNote">下注直接从钱包扣 $SI（首次需授权一次，之后每注一签）。赢利、返佣、退款先进待领取，点提现即可回到钱包。</div>
     <div class="input-line">
       <input id="withdrawAmt" type="number" min="0" step="1000" placeholder="提现金额（$SI），留空=全部" data-i18n-ph="wallet.withdrawPh">
       <button class="btn-ghost" id="withdrawBtn" data-i18n="wallet.withdraw">提现</button>
@@ -710,7 +707,7 @@ body.no-fx .src-dot{animation:none!important}
 /* ---------------- 配置（部署时只改这里） ---------------- */
 const CONFIG = {
   RELAY_URL: "",            // Cloudflare Worker 中继 wss 地址，如 "wss://relay.example.workers.dev/ws"；未部署留空 ""，自动走备用链路
-  CONTRACT_ADDRESS: "0x1d934ce675fc8947f6F701e7EBfcB5b503563650",    // BSC 测试网 DuoKongBattle（2026-11-24 部署）
+  CONTRACT_ADDRESS: "0x72C7d18c0aC4718ec04c79e7E4f6dE74560D1d4e",    // BSC 测试网 DuoKongBattle（2026-11-24 部署）
   CHAIN_ID: 97,            // 默认 BSC 测试网；主网改为 56
   CHAIN_NAME: "BSC 测试网",
   CHAIN_RPC: "https://data-seed-prebsc-1-s1.binance.org:8545",
@@ -802,6 +799,7 @@ const ABI_SOURCE = "contracts/abi/DuoKongBattle.json";
 const CONTRACT_PENDING = { deposit: false, latestRoundId: false };
 const BATTLE_ABI = [
   "function placeBet(uint256 roundId, bool isLong, uint256 amount)",
+  "function placeBetFromWallet(uint256 roundId, bool isLong, uint256 amount)",
   "function bindReferrer(address referrer)",
   "function referrerOf(address user) view returns (address)", // M-7（审计）：绑定前先查是否已绑定；合约已有 public referrerOf（DuoKongBattle.sol:128），前端 ABI 之前漏了，这里补上
   "function withdraw(address token, uint256 amount)",
@@ -848,7 +846,7 @@ zh: {
 "ceremony.enter":"⚔️ 进入战场","ceremony.skip":"点击进入后开启战鼓音乐 · 可随时静音",
 "pool.label":"本局总奖池 · TOTAL POOL","pool.long":"多池","pool.short":"空池",
 "castle.long":"多军城堡","castle.short":"空军城堡",
-"wallet.internal":"产品内余额","wallet.depositNote":"充值：先 approve 仅本次金额，再调合约 deposit() 存入产品内余额；下注从产品内余额扣，不再每注转币。赢利、返佣、退款都进产品内余额，随时提现。",
+"wallet.internal":"待领取","wallet.depositNote":"下注直接从钱包扣 $SI（首次需授权一次，之后每注一签）。赢利、返佣、退款先进待领取，点提现即可回到钱包。",
 "wallet.depositPh":"充值金额（$SI）","wallet.withdrawPh":"提现金额（$SI），留空=全部",
 "top.connect":"连接钱包","hero.tag":"1 分钟极速 · 5 分钟经典 · 赢家分池 · 纯链上结算","hero.tagClassic":"5 分钟经典 · 赢家分池 · 纯链上结算",
 "mode.speed":"⚡ 1 分钟极速<small>每分钟一局 · 快节奏</small>","mode.mid":"🕒 3 分钟进阶<small>每 3 分钟一局 · 攻守兼备</small>","mode.classic":"🕐 5 分钟经典<small>每 5 分钟一局 · 更从容</small>",
@@ -859,7 +857,7 @@ zh: {
 "bet.title":"🎯 下注面板","bet.long":"看涨","bet.short":"看跌","bet.odds":"赔率","bet.times":"倍",
 "bet.amount":"下注金额（$SI）","bet.min":"最低","bet.max":"单注上限",
 "calc.pool":"本局奖池（多 + 空）","calc.fee":"平台费 5%（2% 销毁 · 2% 返佣 · 1% 运营）","calc.win":"若获胜，预计到手","calc.profit":"预计净收益",
-"bet.note":"下注从产品内余额扣：先充值（approve 仅本次充值金额），再调合约 <b>placeBet</b>，不再每注从钱包转币。平台费 5% 与链上 gas 均由玩家承担，BSC 单笔 gas 约 0.2–0.3 美元。",
+"bet.note":"下注直接从钱包扣 $SI：首次授权一次，之后点看涨/看跌确认一次即成。平台费 5% 与链上 gas 均由玩家承担。",
 "wallet.title":"👛 我的钱包","wallet.si":"$SI 钱包余额","wallet.myBet":"本局已下注","wallet.rebate":"累计返佣（待提）",
 "wallet.deposit":"充值","wallet.withdraw":"提现","wallet.refresh":"刷新余额","wallet.disconnect":"断开钱包",
 "wallet.notConnected":"未连接钱包。支持 MetaMask、OKX 钱包、TP 钱包、币安钱包。",
@@ -896,12 +894,12 @@ zh: {
 "err.connect":"请先连接钱包","err.notDeployed":"合约尚未部署，下注暂不可用（待填 CONTRACT_ADDRESS）",
 "err.closed":"本局下注已截止，请等下一局","err.amount":"请输入下注金额",
 "err.min":"最低下注 {min} $SI（约 ${usd}）","err.max":"单注上限 {max} $SI","err.int":"金额须为整数 $SI",
-"err.cap":"本局奖池已达上限 {cap} $SI","err.noBalance":"产品内余额不足，请先充值（充值按钮已高亮）",
+"err.cap":"本局奖池已达上限 {cap} $SI","err.noBalance":"产品内余额不足，请先充值（充值按钮已高亮）","err.noWalletBal":"钱包里 $SI 不足，请先在钱包中备好 $SI",
 "bet.locked":"⏳ 本局已锁定 · 等下一局","bet.connectFirst":"🔗 连接钱包后下注","bet.notDeployed":"🛠️ 合约待部署 · 下注暂不可用",
 "bet.longBtn":"↗ 看涨下单 · {amt} $SI","bet.shortBtn":"↘ 看跌下单 · {amt} $SI",
 "bet.processing":"⏳ 交易处理中…","bet.confirm":"下注成功",
 "src.connecting":"行情连接中…","src.retry":"行情重连中…","src.relay":"币安 · 中继","src.demo":"演示价","rec.demo":" · 本机演示记录","wallet.connectedHtml":"已连接 <b>{addr}</b> · {wallet} · {chain}","err.unknown":"未知错误","wallet.readFail":"读取失败","wallet.noContract":"合约未部署","wallet.tokenNotConfigured":"测试网代币未配置","fx.on":"✨ 特效","fx.off":"✨ 特效关","toast.connected":"钱包已连接","toast.betOk":"下注成功 · 交易已上链","toast.betSent":"下注交易已发送，等待上链…",
-"toast.approveDep":"正在发送 approve 授权交易（仅本次充值金额，不做无限授权）…",
+"toast.approveDep":"正在发送 approve 授权交易（仅本次充值金额，不做无限授权）…","toast.approveBet":"首次下注需授权一次（之后每注只签一次）…",
 "toast.depSent":"充值交易已发送…","toast.depOk":"充值成功，产品内余额已更新","toast.depFail":"充值失败：","toast.depAmt":"请输入有效的充值金额（整数 $SI）",
 "toast.withdrawSent":"提现交易已发送…","toast.withdrawOk":"提现成功","toast.withdrawFail":"提现失败：","toast.noBalance":"暂无可提余额",
 "toast.refCopied":"邀请链接已复制","toast.copyFail":"复制失败，请长按手动复制","toast.refNeedWallet":"请先连接钱包生成邀请链接",
@@ -924,7 +922,7 @@ en: {
 "ceremony.enter":"⚔️ Enter the Arena","ceremony.skip":"Music starts after entry · Mute anytime",
 "pool.label":"TOTAL POOL","pool.long":"Long Pool","pool.short":"Short Pool",
 "castle.long":"LONG CASTLE","castle.short":"SHORT CASTLE",
-"wallet.internal":"In-Arena Balance","wallet.depositNote":"Deposit: approve only this amount, then call deposit() — bets draw from your in-arena balance. Winnings, rebates and refunds all land here; withdraw anytime.",
+"wallet.internal":"Claimable","wallet.depositNote":"Bets pull $SI straight from your wallet (one-time approval first, then one signature per bet). Winnings, rebates and refunds land in Claimable — withdraw anytime.",
 "wallet.depositPh":"Deposit amount ($SI)","wallet.withdrawPh":"Withdraw amount ($SI), blank = all",
 "top.connect":"Connect Wallet","hero.tag":"1-min Speed · 5-min Classic · Winners split the pool · Fully on-chain","hero.tagClassic":"5-min Classic · Winners split the pool · Fully on-chain",
 "mode.speed":"⚡ 1-min Speed<small>One round per minute · Fast-paced</small>","mode.mid":"🕒 3-min Mid<small>One round every 3 min · Balanced</small>","mode.classic":"🕐 5-min Classic<small>One round every 5 min · Take your time</small>",
@@ -935,7 +933,7 @@ en: {
 "bet.title":"🎯 Bet Panel","bet.long":"Up","bet.short":"Down","bet.odds":"Odds","bet.times":"x",
 "bet.amount":"Bet Amount ($SI)","bet.min":"Min","bet.max":"Max per bet",
 "calc.pool":"Round Pool (Long + Short)","calc.fee":"Fee 5% (2% burn · 2% referral · 1% ops)","calc.win":"If you win, you get","calc.profit":"Est. Net Profit",
-"bet.note":"Bets draw from your in-arena balance: deposit first (approve only this deposit amount), then <b>placeBet</b> — no per-bet wallet transfer. 5% fee + gas are on you; one BSC tx costs ~$0.2–0.3.",
+"bet.note":"Bets pull $SI straight from your wallet: one-time approval first, then one signature per bet via <b>placeBetFromWallet</b>. 5% fee + gas are on you; one BSC tx costs ~$0.2–0.3.",
 "wallet.title":"👛 My Wallet","wallet.si":"$SI Wallet Balance","wallet.myBet":"My Bet This Round","wallet.rebate":"Rebate Pending",
 "wallet.deposit":"Deposit","wallet.withdraw":"Withdraw","wallet.refresh":"Refresh","wallet.disconnect":"Disconnect",
 "wallet.notConnected":"Wallet not connected. MetaMask, OKX, TP and Binance Wallet supported.",
@@ -972,12 +970,12 @@ en: {
 "err.connect":"Connect your wallet first","err.notDeployed":"Contract not deployed yet — betting is paused (CONTRACT_ADDRESS pending)",
 "err.closed":"Betting closed for this round — wait for the next one","err.amount":"Enter a bet amount",
 "err.min":"Min bet {min} $SI (~${usd})","err.max":"Max per bet {max} $SI","err.int":"Amount must be whole $SI",
-"err.cap":"Round pool cap reached: {cap} $SI","err.noBalance":"In-arena balance too low — deposit first (deposit button highlighted)",
+"err.cap":"Round pool cap reached: {cap} $SI","err.noBalance":"In-arena balance too low — deposit first (deposit button highlighted)","err.noWalletBal":"Not enough $SI in your wallet — top up your wallet first",
 "bet.locked":"⏳ Locked · Next round soon","bet.connectFirst":"🔗 Connect wallet to bet","bet.notDeployed":"🛠️ Contract pending · Betting unavailable",
 "bet.longBtn":"↗ Up · Bet {amt} $SI","bet.shortBtn":"↘ Down · Bet {amt} $SI",
 "bet.processing":"⏳ Processing tx…","bet.confirm":"Bet confirmed!",
 "src.connecting":"Connecting…","src.retry":"Reconnecting…","src.relay":"Binance · Relay","src.demo":"Demo price","rec.demo":" · Local demo record","wallet.connectedHtml":"Connected <b>{addr}</b> · {wallet} · {chain}","err.unknown":"Unknown error","wallet.readFail":"Failed to load","wallet.noContract":"No contract","wallet.tokenNotConfigured":"Testnet token not configured","fx.on":"✨ Effects","fx.off":"✨ Effects Off","toast.connected":"Wallet connected","toast.betOk":"Bet confirmed on-chain","toast.betSent":"Bet tx sent, waiting for confirmation…",
-"toast.approveDep":"Sending approve tx (only this deposit amount — no unlimited approval)…",
+"toast.approveDep":"Sending approve tx (only this deposit amount — no unlimited approval)…","toast.approveBet":"First bet needs a one-time approval (then one signature per bet)…",
 "toast.depSent":"Deposit tx sent…","toast.depOk":"Deposit successful — in-arena balance updated","toast.depFail":"Deposit failed: ","toast.depAmt":"Enter a valid deposit amount (whole $SI)",
 "toast.withdrawSent":"Withdraw tx sent…","toast.withdrawOk":"Withdraw successful","toast.withdrawFail":"Withdraw failed: ","toast.noBalance":"No withdrawable balance",
 "toast.refCopied":"Invite link copied","toast.copyFail":"Copy failed — long-press to copy manually","toast.refNeedWallet":"Connect your wallet to generate your invite link",
@@ -1725,22 +1723,54 @@ function updateBetBtn() {
 })();
 
 /* ---------------- 钱包 ---------------- */
+const EIP6963_WALLETS = [];
+window.addEventListener("eip6963:announceProvider", (ev) => {
+  try {
+    const d = ev.detail; if (!d || !d.provider || !d.info) return;
+    if (EIP6963_WALLETS.some((x) => x.info.uuid === d.info.uuid)) return;
+    EIP6963_WALLETS.push(d);
+  } catch (e) {}
+});
+try { window.dispatchEvent(new Event("eip6963:requestProvider")); } catch (e) {}
+function walletBrand(p) {
+  if (!p) return null;
+  if (p.isOKXWallet || p.isOKExWallet) return "OKX Wallet";
+  if (p.isTokenPocket || p.isTP) return "TP Wallet";
+  if (p.isBinance || p.isBinanceWallet) return "Binance Wallet";
+  if (p.isTrust || p.isTrustWallet) return "Trust Wallet";
+  if (p.isCoinbaseWallet) return "Coinbase Wallet";
+  if (p.isRabby) return "Rabby";
+  if (p.isImToken) return "imToken";
+  if (p.isBitKeep || p.isBitgetWallet) return "Bitget Wallet";
+  if (p.isMetaMask) return "MetaMask";
+  return null;
+}
 function detectWallets() {
-  const eth = window.ethereum;
+  try { window.dispatchEvent(new Event("eip6963:requestProvider")); } catch (e) {}
   const list = [];
-  const push = (id, name, desc, ico, prov, detected) => list.push({ id, name, desc, ico, prov, detected });
-  if (eth) {
-    push("metamask", "MetaMask", t("wallet.descMM"), "🦊", eth, !!eth.isMetaMask);
-    push("okx", "OKX Wallet", t("wallet.descOKX"), "🟣", eth, !!eth.isOKXWallet || !!window.okxwallet);
-    push("tp", "TP Wallet", t("wallet.descTP"), "💙", eth, !!eth.isTokenPocket || !!eth.isTP || !!window.tp);
-    push("binance", "Binance Wallet", t("wallet.descBNB"), "🟡", eth, !!eth.isBinance || !!window.BinanceChain);
-  } else {
-    push("metamask", "MetaMask", t("wallet.descNone"), "🦊", null, false);
-    push("okx", "OKX Wallet", t("wallet.descNone"), "🟣", null, false);
-    push("tp", "TP Wallet", t("wallet.descNone"), "💙", null, false);
-    push("binance", "Binance Wallet", t("wallet.descNone"), "🟡", null, false);
+  const seen = new Set();
+  const push = (id, name, desc, ico, prov, detected) => { if (prov) { if (seen.has(prov)) return; seen.add(prov); } list.push({ id, name, desc, ico, prov, detected }); };
+  EIP6963_WALLETS.forEach((d, i) => {
+    push("eip6963-" + i, d.info.name || walletBrand(d.provider) || "Web3 Wallet", t("wallet.stateDetected"), "\u{1F45B}", d.provider, true);
+  });
+  const provs = [];
+  const eth = window.ethereum;
+  if (eth) { if (Array.isArray(eth.providers)) provs.push(...eth.providers); provs.push(eth); }
+  if (window.okxwallet) provs.push(window.okxwallet);
+  if (window.BinanceChain) provs.push(window.BinanceChain);
+  if (window.tp) provs.push(window.tp);
+  provs.forEach((p) => {
+    const brand = walletBrand(p);
+    if (brand) push(brand.toLowerCase().replace(/[^a-z0-9]+/g, ""), brand, t("wallet.stateDetected"), "\u{1F45B}", p, true);
+    else push("injected", "Web3 Wallet", t("wallet.stateOk"), "\u{1F45B}", p, false);
+  });
+  if (!list.length) {
+    push("metamask", "MetaMask", t("wallet.descNone"), "\u{1F98A}", null, false);
+    push("okx", "OKX Wallet", t("wallet.descNone"), "\u{1F7E3}", null, false);
+    push("tp", "TP Wallet", t("wallet.descNone"), "\u{1F499}", null, false);
+    push("binance", "Binance Wallet", t("wallet.descNone"), "\u{1F7E1}", null, false);
   }
-  push("wc", "WalletConnect", t("wallet.descWC"), "🔗", null, false);
+  push("wc", "WalletConnect", t("wallet.descWC"), "\u{1F517}", null, false);
   return list;
 }
 function quickConnect() {
@@ -1904,19 +1934,24 @@ async function doBet() {
   btn.textContent = t("bet.processing");
   try {
     const amountWei = ethers.parseUnits(String(amt), TOKEN.decimals);
-    // 下注从产品内余额扣：先查 pendingBalance，不足就明确提示充值并高亮充值按钮。
-    let internal = 0n;
-    try { internal = await S.contract.pendingBalance(S.account, TOKEN.address); } catch (e) {}
-    if (internal < amountWei) {
-      toast(t("err.noBalance"));
-      const db = $("depositBtn");
-      db.classList.add("attn");
-      setTimeout(() => db.classList.remove("attn"), 6000);
-      $("depositAmt").focus();
-      document.getElementById("walletCard").scrollIntoView({ behavior: "smooth", block: "center" });
-      return;
+    // 钱包直扣：直接查钱包里的 $SI 余额，不再走产品内余额/充值。
+    let walletBal = 0n;
+    try { walletBal = await S.si.balanceOf(S.account); } catch (e) {}
+    if (walletBal < amountWei) { toast(t("err.noWalletBal")); return; }
+    // 首次下注一次性无限授权，之后每注只签一次 placeBetFromWallet，合约直接从钱包扣币。
+    try {
+      const allowance = await S.si.allowance(S.account, CONFIG.CONTRACT_ADDRESS);
+      if (allowance < amountWei) {
+        toast(t("toast.approveBet"));
+        const txA = await S.si.connect(S.signer).approve(CONFIG.CONTRACT_ADDRESS, ethers.MaxUint256);
+        await txA.wait();
+      }
+    } catch (e) {
+      const m2 = (e && e.message) || "";
+      if (m2.includes("user rejected") || m2.includes("User denied")) { toast(t("toast.cancelled")); return; }
+      throw e;
     }
-    const tx = await S.contract.placeBet(S.roundId, S.side === "long", amountWei);
+    const tx = await S.contract.placeBetFromWallet(S.roundId, S.side === "long", amountWei);
     toast(t("toast.betSent"));
     const rc = await tx.wait();
     const bet = { roundId: S.roundId, mode: S.mode, side: S.side, amount: amt, lockPrice: S.lockPrice, tx: rc.hash, at: Date.now(), result: null };
@@ -1935,39 +1970,6 @@ async function doBet() {
     toast(msg.includes("user rejected") || msg.includes("User denied") ? t("toast.cancelled") : t("toast.betFail") + msg.slice(0, 70));
   } finally {
     updateBetBtn();
-  }
-}
-async function doDeposit() {
-  if (!S.account) { quickConnect(); toast(t("err.connect")); return; }
-  if (!CONFIG.CONTRACT_ADDRESS || !S.contract) { toast(t("err.notDeployed")); return; }
-  if (TOKEN_NOT_CONFIGURED) { toast(t("toast.tokenNotConfigured")); return; } // M-3：测试网代币未配置，拦截充值
-  const amt = parseFloat($("depositAmt").value);
-  if (!amt || amt <= 0 || !Number.isInteger(amt)) { toast(t("toast.depAmt")); return; }
-  const btn = $("depositBtn");
-  btn.disabled = true;
-  try {
-    const amountWei = ethers.parseUnits(String(amt), TOKEN.decimals);
-    // 授权仅本次充值金额，绝不使用 MaxUint256 无限授权
-    const allowance = await S.si.allowance(S.account, CONFIG.CONTRACT_ADDRESS);
-    if (allowance < amountWei) {
-      toast(t("toast.approveDep"));
-      const txA = await S.si.connect(S.signer).approve(CONFIG.CONTRACT_ADDRESS, amountWei);
-      await txA.wait();
-    }
-    const tx = await S.contract.deposit(TOKEN.address, amountWei);
-    toast(t("toast.depSent"));
-    await tx.wait();
-    toast(t("toast.depOk"));
-    $("depositAmt").value = "";
-    refreshBalances();
-  } catch (e) {
-    console.error(e);
-    const msg = (e && e.message) || "";
-    if (msg.includes("user rejected") || msg.includes("User denied")) { toast(t("toast.cancelled")); return; }
-    // deposit() 尚未部署到合约时调用会 revert，这里明确提示而不是含糊报错
-    toast(t("toast.depFail") + msg.slice(0, 60));
-  } finally {
-    btn.disabled = false;
   }
 }
 async function doWithdraw() {
@@ -2160,6 +2162,13 @@ function bgmEnsure() {
     const AC = window.AudioContext || window.webkitAudioContext;
     if (!AC) return false;
     BGM.ctx = new AC();
+    // iOS / TP 内置浏览器解锁：建上下文时立刻播一个 1 采样静音缓冲，并尝试 resume
+    try {
+      const sb = BGM.ctx.createBuffer(1, 1, 22050);
+      const ss = BGM.ctx.createBufferSource();
+      ss.buffer = sb; ss.connect(BGM.ctx.destination); ss.start(0);
+    } catch (e) {}
+    if (BGM.ctx.state === "suspended") { BGM.ctx.resume().catch(() => {}); }
     BGM.master = BGM.ctx.createGain();
     BGM.master.gain.value = BGM.muted ? 0 : 0.5;
     const comp = BGM.ctx.createDynamicsCompressor();
@@ -3037,7 +3046,6 @@ function bindUI() {
   $("copyRefBtn").onclick = copyRef;
   $("refConfirmBtn").onclick = confirmBindReferrer; // M-7：用户点确认后才发 bindReferrer 交易
   $("refCancelBtn").onclick = hideRefPending;
-  $("depositBtn").onclick = doDeposit;
   $("enterBtn").onclick = enterArena;
   $("langBtn").onclick = () => {
     LANG = LANG === "zh" ? "en" : "zh";
