@@ -400,6 +400,9 @@ body{padding-bottom:78px}
 .chip{flex:1;background:#1a1f2c;border:1px solid #262d3d;color:#aeb8cc;border-radius:8px;padding:9px 2px;font-size:12.5px}
 .chip.sel{border-color:#e8ecf4;color:#fff;background:#232a3a}
 .payout-line{text-align:right;color:#8b96ad}
+.road-grid .rdot{width:25px;height:25px}
+.road-card{max-height:none}
+.side-btn .s-odds,.side-btn .s-pool{display:none}
 
 .stat-k{font-size:11px;color:var(--muted);order:1}
 .road-grid{display:grid;grid-template-rows:repeat(6,13px);grid-auto-flow:column;grid-auto-columns:13px;gap:3px;overflow-x:auto;justify-content:start;padding:2px 0;margin-top:6px;min-height:0}
@@ -2129,12 +2132,12 @@ function launchConfetti() {
 const BGM = { ctx: null, master: null, musicGain: null, beepGain: null, on: false, muted: false, volume: 0.8, timer: null, step: 0, nextTime: 0 };
 function bgmLoadState() {
   try {
-    const v = JSON.parse(localStorage.getItem("qk_bgm_v1") || "{}");
+    const v = JSON.parse(localStorage.getItem("qk_bgm_v2") || "{}");
     return { muted: "muted" in v ? !!v.muted : false, volume: typeof v.volume === "number" ? v.volume : 0.8 };
   } catch (e) { return { muted: false, volume: 0.8 }; }
 }
 function bgmSave() {
-  try { localStorage.setItem("qk_bgm_v1", JSON.stringify({ muted: BGM.muted, volume: BGM.volume })); } catch (e) {}
+  try { localStorage.setItem("qk_bgm_v2", JSON.stringify({ muted: BGM.muted, volume: BGM.volume })); } catch (e) {}
 }
 function bgmBpm() {
   const gap = Math.abs((S.powerPct || 50) - 50) / 50;
@@ -2739,8 +2742,13 @@ function drawLine() {
     ctx.font = "10px sans-serif";
   }
   const hx = tx(Math.min(now, t1)), hy = y(S.price);
-  const sm = pts.map((k, i) => {
-    const a = pts[Math.max(0, i - 1)], b = pts[Math.min(pts.length - 1, i + 1)];
+  const med = pts.map((k, i) => {
+    const a = pts[Math.max(0, i - 1)].p, b = pts[Math.min(pts.length - 1, i + 1)].p;
+    const s3 = [a, k.p, b].sort((x, y) => x - y);
+    return { t: k.t, p: s3[1] };
+  });
+  const sm = med.map((k, i) => {
+    const a = med[Math.max(0, i - 1)], b = med[Math.min(med.length - 1, i + 1)];
     return { t: k.t, p: (a.p + k.p * 2 + b.p) / 4 };
   });
   ctx.beginPath();
