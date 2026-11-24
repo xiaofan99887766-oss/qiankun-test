@@ -9,16 +9,16 @@
 <!-- ethers 改为 JS 动态加载（见 loadEthers）：同步外链在国内可能卡住解析，导致黑屏；head 里不再放同步外链脚本 -->
 <style>
 :root{
-  --bg:#07090f; --bg2:#0b0f1a; --panel:#101624; --panel2:#141b2e; --line:#232c44;
-  --gold:#d8b45a; --gold2:#f0d48a; --gold-dim:#8a7434;
+  --bg:#05070c; --bg2:#090c13; --panel:#0e1219; --panel2:#12161f; --line:#1c222d;
+  --gold:#c9a24d; --gold2:#e9cf8f; --gold-dim:#77653a;
   --red:#ff4d6d; --red-deep:#c81e42; --red-bg:rgba(255,77,109,.12);
   --blue:#3b82f6; --blue-deep:#1d5fd6; --blue-bg:rgba(59,130,246,.12);
-  --green:#2fbf71; --text:#eef1f8; --muted:#8b96ad; --muted2:#5d6a86;
+  --green:#2fbf71; --text:#eceff4; --muted:#8a93a3; --muted2:#59616e;
   --radius:16px; --radius-s:10px;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html{scroll-behavior:smooth}
-body{background:radial-gradient(1200px 600px at 50% -10%,#141b31 0%,var(--bg) 55%);color:var(--text);
+body{background:radial-gradient(1200px 600px at 50% -10%,#0d1420 0%,var(--bg) 55%);color:var(--text);
   font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
   min-height:100vh;line-height:1.5}
 a{color:var(--gold2)}
@@ -312,12 +312,20 @@ input{font-family:inherit}
 .road-grid{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;min-height:14px}
 .road-grid .rdot{width:14px;height:14px}
 .road-empty{color:var(--muted);font-size:12px}
-.result-banner{position:fixed;inset:0;z-index:300;display:grid;place-items:center;font-size:34px;font-weight:800;letter-spacing:2px;pointer-events:none;opacity:0;transition:opacity .25s;background:radial-gradient(circle at 50% 45%,rgba(30,203,110,.3),transparent 65%);color:#7fe6ae}
-.result-banner.short{background:radial-gradient(circle at 50% 45%,rgba(246,70,93,.3),transparent 65%);color:#ff8fa5}
+.result-banner{position:fixed;inset:0;z-index:300;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;pointer-events:none;opacity:0;transition:opacity .25s;background:radial-gradient(circle at 50% 45%,rgba(30,203,110,.3),transparent 65%)}
+.rb-ring{width:118px;height:118px;border-radius:50%;border:3px solid rgba(240,212,138,.95);box-shadow:0 0 44px rgba(240,212,138,.55),inset 0 0 30px rgba(240,212,138,.35);animation:rbPulse .8s ease-in-out infinite alternate}
+@keyframes rbPulse{from{transform:scale(.92);opacity:.7}to{transform:scale(1.06);opacity:1}}
+.rb-main{font-size:47px;font-weight:900;letter-spacing:4px;color:#7fe6ae;text-shadow:0 4px 30px rgba(0,0,0,.6)}
+.result-banner.short .rb-main{color:#ff8fa5}
+.result-banner.draw .rb-main{color:#e9cf8f}
+.rb-sub{font-size:16px;font-weight:700;letter-spacing:1px;color:#f0d48a}
+.result-banner.short{background:radial-gradient(circle at 50% 45%,rgba(246,70,93,.3),transparent 65%)}
+.result-banner.settling{background:radial-gradient(circle at 50% 45%,rgba(240,212,138,.22),transparent 65%)}
+.result-banner.settling .rb-main{font-size:24px;color:#e9cf8f;letter-spacing:3px}
 .result-banner.draw{background:radial-gradient(circle at 50% 45%,rgba(160,170,190,.25),transparent 65%);color:#c6cede;font-size:24px}
 .result-banner.show{opacity:1}
 .stats-bar{display:flex;gap:10px;margin-top:14px}
-.stat{flex:1;background:linear-gradient(180deg,#101728,#0b0f1a);border:1px solid var(--line);border-radius:var(--radius);padding:10px 14px;text-align:center}
+.stat{flex:1;background:linear-gradient(180deg,#0d1119,#090c12);border:1px solid var(--line);border-radius:var(--radius);padding:10px 14px;text-align:center}
 .stat-v{font-size:19px;font-weight:800;color:#f5c542;font-variant-numeric:tabular-nums}
 .stat-k{font-size:11px;color:var(--muted);margin-top:2px}
 .chart-state{position:absolute;top:8px;left:10px;z-index:3;background:rgba(10,14,24,.85);border:1px solid var(--line);color:#e8edf7;font-size:11px;font-weight:700;padding:3px 10px;border-radius:99px}
@@ -332,6 +340,19 @@ body{padding-bottom:78px}
 .tabbar button{flex:1;background:none;border:0;color:var(--muted);font-size:11px;font-weight:600;display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 0;cursor:pointer}
 .tabbar .tb-ico{font-size:19px;line-height:1}
 .tabbar button.on{color:#f5c542}
+.tabbar .tb-center .tb-ico{display:grid;place-items:center;width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#f0d48a,#c39a2e);color:#171204;font-size:22px;margin-top:-28px;box-shadow:0 8px 22px rgba(216,180,90,.5);border:3px solid #07090f}
+.tabbar .tb-center{color:#f0d48a;font-weight:800}
+.sheet{position:fixed;inset:0;z-index:200;background:rgba(4,6,12,.62);display:none;align-items:flex-end;justify-content:center}
+.sheet.open{display:flex}
+.sheet-card{background:#0e1219;border:1px solid var(--line);border-radius:18px 18px 0 0;padding:18px 16px calc(16px + env(safe-area-inset-bottom));width:100%;max-width:520px}
+.sheet-title{font-size:16px;font-weight:800;letter-spacing:1px}
+.mode-opt{display:flex;width:100%;align-items:center;justify-content:space-between;gap:10px;padding:13px 14px;margin-top:10px;border-radius:12px;border:1px solid var(--line);background:var(--panel);color:#e8edf7;font-size:15px;font-weight:700;cursor:pointer;text-align:left}
+.mode-opt small{display:block;font-size:11px;color:var(--muted);font-weight:500;margin-top:2px}
+.mode-opt.on{border-color:#f5c542}
+.mode-opt .mo-tag{display:none;font-size:11px;color:#f5c542;border:1px solid #f5c542;border-radius:99px;padding:2px 8px;white-space:nowrap}
+.mode-opt.on .mo-tag{display:inline}
+.sheet-rules{margin-top:12px;font-size:12px;line-height:1.7;color:var(--muted)}
+.sheet-close{width:100%;margin-top:14px;padding:12px;border-radius:12px;border:1px solid var(--line);background:none;color:#e8edf7;font-size:14px;font-weight:700;cursor:pointer}
 
 /* ---------- 灯光 / 闪光 / 过场 / 冲击波 ---------- */
 .wrap{position:relative;z-index:1}
@@ -625,7 +646,7 @@ body.no-fx .src-dot{animation:none!important}
 /* ---------------- 配置（部署时只改这里） ---------------- */
 const CONFIG = {
   RELAY_URL: "",            // Cloudflare Worker 中继 wss 地址，如 "wss://relay.example.workers.dev/ws"；未部署留空 ""，自动走备用链路
-  CONTRACT_ADDRESS: "0x54CCAe377e4f153EA4f8Ffdc2679fDD5d56Bf710",    // BSC 测试网 DuoKongBattle（2026-11-24 部署）
+  CONTRACT_ADDRESS: "0x1d934ce675fc8947f6F701e7EBfcB5b503563650",    // BSC 测试网 DuoKongBattle（2026-11-24 部署）
   CHAIN_ID: 97,            // 默认 BSC 测试网；主网改为 56
   CHAIN_NAME: "BSC 测试网",
   CHAIN_RPC: "https://data-seed-prebsc-1-s1.binance.org:8545",
@@ -636,7 +657,7 @@ const CONFIG = {
   MAX_BET: 5000000,        // 单注上限 $SI
   ROUND_CAP: 5000000,      // 单局总池上限 $SI（初期）
   SI_USD: 0.0002054,       // $SI 参考价（仅用于展示约值，待行情接入后替换）
-  LAUNCH_MODES: ["CLASSIC"], // 上线开局配置：默认只开 5 分钟经典局；后期开 1 分钟极速局（ENABLE_SPEED）时改成 ["CLASSIC", "SPEED"]
+  LAUNCH_MODES: ["CLASSIC", "SPEED", "MID"], // 上线开局配置：默认只开 5 分钟经典局；后期开 1 分钟极速局（ENABLE_SPEED）时改成 ["CLASSIC", "SPEED"]
 };
 
 /* 多币种预留：代币做成配置对象，v1 只启用 $SI
@@ -647,7 +668,7 @@ const CONFIG = {
      不会再拿主网地址去测试网发交易。 */
 const TOKENS = {
   SI:   { symbol: "$SI",  name: "SpaceX Inu", decimals: 18, enabled: true,
-          addressesByChain: { 97: "0x5b1E6e0649E170eb971dbb4E75982f74D61Af4F4", 56: "0xd1cab9922357fc7ae7a9861b29191b84bdb47777" } },
+          addressesByChain: { 97: "0x280ad535d3F79E99541865a7bAB65fAc9d050249", 56: "0xd1cab9922357fc7ae7a9861b29191b84bdb47777" } },
   // USDT: { symbol: "USDT", name: "Tether USD",  decimals: 18, enabled: false, addressesByChain: { 56: "0x55d398326f99059fF775485246999027B319F875" } },
 };
 TOKENS.SI.address = TOKENS.SI.addressesByChain[CONFIG.CHAIN_ID] || TOKENS.SI.addressesByChain[56];
@@ -685,7 +706,7 @@ function loadEthers() {
    CONFIG.LAUNCH_MODES 决定哪些模式对玩家开放；取值 "CLASSIC" / "SPEED"（大小写不限）。 */
 function enabledModes() {
   const list = (CONFIG.LAUNCH_MODES || ["CLASSIC"]).map((m) => String(m).toLowerCase());
-  const modes = list.filter((m) => m === "speed" || m === "classic");
+  const modes = list.filter((m) => m === "speed" || m === "classic" || m === "mid");
   return modes.length ? modes : ["classic"];
 }
 function defaultMode() { return enabledModes()[0]; }
@@ -766,7 +787,7 @@ zh: {
 "wallet.internal":"产品内余额","wallet.depositNote":"充值：先 approve 仅本次金额，再调合约 deposit() 存入产品内余额；下注从产品内余额扣，不再每注转币。赢利、返佣、退款都进产品内余额，随时提现。",
 "wallet.depositPh":"充值金额（$SI）","wallet.withdrawPh":"提现金额（$SI），留空=全部",
 "top.connect":"连接钱包","hero.tag":"1 分钟极速 · 5 分钟经典 · 赢家分池 · 纯链上结算","hero.tagClassic":"5 分钟经典 · 赢家分池 · 纯链上结算",
-"mode.speed":"⚡ 1 分钟极速<small>每分钟一局 · 快节奏</small>","mode.classic":"🕐 5 分钟经典<small>每 5 分钟一局 · 更从容</small>",
+"mode.speed":"⚡ 1 分钟极速<small>每分钟一局 · 快节奏</small>","mode.mid":"🕒 3 分钟进阶<small>每 3 分钟一局 · 攻守兼备</small>","mode.classic":"🕐 5 分钟经典<small>每 5 分钟一局 · 更从容</small>",
 "mode.speedShort":"1 分钟极速","mode.classicShort":"5 分钟经典","cd.lockSettle":"锁定 / 结算",
 "battle.title":"⚔️ 多空对决 <span>· 实时战力</span>","army.long":"多 军","army.short":"空 军",
 "army.longSub":"看涨 · 买盘","army.shortSub":"看跌 · 卖盘","power.long":"多军战力","power.short":"空军战力",
@@ -802,7 +823,7 @@ zh: {
 "about.text":"多空对决，$SI 链上下注：1 分钟极速局与 5 分钟经典局，赢家分输家池，每局抽 5%（2% 销毁、2% 邀请返佣、1% 运营），纯链上结算。","about.textClassic":"多空对决，$SI 链上下注：5 分钟经典局，赢家分输家池，每局抽 5%（2% 销毁、2% 邀请返佣、1% 运营），纯链上结算。",
 "modal.title":"连接钱包","modal.desc":"请选择你要使用的钱包。仅支持 BSC 链（测试网 chainId 97，部署后可切主网 56）。本站绝不会索要私钥、助记词或密码。","modal.cancel":"取消",
 "footer.text":"乾坤战场 QIANKUN ARENA · $SI 链上下注 v1<br>行情：币安优先 · Bitget 备用 · Gate 兜底 · 结算锚：Chainlink BTC/USD（链上）",
-"chart.title":"📈 BTC/USDT · 1 分钟 K 线","chart.titleLine":"📈 BTC/USDT · 分时","chart.line":"分时","chart.candles":"K线","chart.startPrice":"开始价格","road.title":"🎲 路引","road.longWin":"涨胜","road.shortWin":"跌胜","road.draw":"平","road.empty":"暂无已结算局","stats.rounds":"已结算局数","stats.pool":"累计派奖","state.betting":"开始预测","state.waiting":"结果生成中","state.settling":"结算中","nav.home":"对决","nav.battle":"战场","nav.wallet":"钱包","nav.records":"记录","win.long":"看涨获胜","win.short":"看跌获胜","win.draw":"平局 · 退回本金","chart.up":"涨","chart.down":"跌","chart.waiting":"等待行情…",
+"chart.title":"📈 BTC/USDT · 1 分钟 K 线","chart.titleLine":"📈 BTC/USDT · 分时","chart.line":"分时","chart.candles":"K线","chart.startPrice":"开始价格","road.title":"🎲 路引","road.longWin":"涨胜","road.shortWin":"跌胜","road.draw":"平","road.empty":"暂无已结算局","stats.rounds":"已结算局数","stats.pool":"累计派奖","state.betting":"开始预测","state.waiting":"结果生成中","state.settling":"结算中","nav.home":"对决","nav.play":"玩法","nav.fight":"马上战斗","win.settling":"即将进行结算","win.paying":"奖励结算中…","mode.midShort":"3 分钟","nav.wallet":"钱包","nav.records":"记录","nav.invite":"邀请","mode.title":"选择玩法","mode.current":"当前","mode.close":"关闭","mode.rules":"选方向 → 到点锁价 → 结算比开始价高低定胜负，赢家分输家奖池（平台费 5%）。平局退本金。","win.long":"看涨获胜","win.short":"看跌获胜","win.draw":"平局 · 退回本金","chart.up":"涨","chart.down":"跌","chart.waiting":"等待行情…",
 "chart.win":"赢","chart.lose":"输","chart.draw":"平局","chart.lockPrice":"锁定价","chart.closePrice":"收盘价",
 "phase.betting":"下注进行中","phase.locked":"已锁定 · 等待结算",
 "cd.cutoff":"下注截止","cd.locked":"下注已截止","cd.lockSoon":"锁定前 15 秒停止下注，请尽快确认",
@@ -822,7 +843,7 @@ zh: {
 "toast.refCopied":"邀请链接已复制","toast.copyFail":"复制失败，请长按手动复制","toast.refNeedWallet":"请先连接钱包生成邀请链接",
 "toast.walletFail":"连接失败：","toast.walletNotFound":"该钱包暂未接入或未检测到",
 "toast.ethersFail":"ethers.js 加载失败，请检查网络后刷新","toast.noAuth":"未获得钱包授权",
-"toast.modeSpeed":"已切换：1 分钟极速局","toast.modeClassic":"已切换：5 分钟经典局",
+"toast.modeSpeed":"已切换：1 分钟极速局","toast.modeMid":"已切换：3 分钟进阶局","toast.modeClassic":"已切换：5 分钟经典局",
 "toast.refBound":"推荐人绑定成功","toast.refAlreadyBound":"你已绑定推荐人，无需重复绑定","toast.refCheckFail":"读取绑定状态失败，请稍后再试","toast.refInvite":"你通过好友邀请进入，连接钱包后请确认绑定推荐人",
 "toast.tokenNotConfigured":"测试网代币未配置：请先部署 MockSI 并把地址填入 TOKENS.SI.addressesByChain[97]",
 "toast.cancelled":"你取消了交易","toast.betFail":"下注失败：","toast.refresh":"已刷新",
@@ -842,7 +863,7 @@ en: {
 "wallet.internal":"In-Arena Balance","wallet.depositNote":"Deposit: approve only this amount, then call deposit() — bets draw from your in-arena balance. Winnings, rebates and refunds all land here; withdraw anytime.",
 "wallet.depositPh":"Deposit amount ($SI)","wallet.withdrawPh":"Withdraw amount ($SI), blank = all",
 "top.connect":"Connect Wallet","hero.tag":"1-min Speed · 5-min Classic · Winners split the pool · Fully on-chain","hero.tagClassic":"5-min Classic · Winners split the pool · Fully on-chain",
-"mode.speed":"⚡ 1-min Speed<small>One round per minute · Fast-paced</small>","mode.classic":"🕐 5-min Classic<small>One round every 5 min · Take your time</small>",
+"mode.speed":"⚡ 1-min Speed<small>One round per minute · Fast-paced</small>","mode.mid":"🕒 3-min Mid<small>One round every 3 min · Balanced</small>","mode.classic":"🕐 5-min Classic<small>One round every 5 min · Take your time</small>",
 "mode.speedShort":"1-min Speed","mode.classicShort":"5-min Classic","cd.lockSettle":"Lock / Settle",
 "battle.title":"⚔️ Long vs Short <span>· Live Power</span>","army.long":"LONG","army.short":"SHORT",
 "army.longSub":"Bullish · Buys","army.shortSub":"Bearish · Sells","power.long":"Long Power","power.short":"Short Power",
@@ -878,7 +899,7 @@ en: {
 "about.text":"Long vs Short, bet with $SI on-chain: 1-min Speed and 5-min Classic rounds, winners split the losers' pool, 5% fee per round (2% burn, 2% referral, 1% ops), fully on-chain settlement.","about.textClassic":"Long vs Short, bet with $SI on-chain: 5-min Classic rounds, winners split the losers' pool, 5% fee per round (2% burn, 2% referral, 1% ops), fully on-chain settlement.",
 "modal.title":"Connect Wallet","modal.desc":"Pick a wallet. BSC only (testnet chainId 97; mainnet 56 after launch). We will never ask for your private key, seed phrase or password.","modal.cancel":"Cancel",
 "footer.text":"QIANKUN ARENA · $SI On-Chain Prediction v1<br>Price: Binance first · Bitget backup · Gate fallback · Settlement anchor: Chainlink BTC/USD (on-chain)",
-"chart.title":"📈 BTC/USDT · 1m Candles","chart.titleLine":"📈 BTC/USDT · Live Line","chart.line":"Line","chart.candles":"Candles","chart.startPrice":"Start Price","road.title":"🎲 Road","road.longWin":"Long won","road.shortWin":"Short won","road.draw":"Draw","road.empty":"No settled rounds yet","stats.rounds":"Rounds Settled","stats.pool":"Total Paid Out","state.betting":"Betting Open","state.waiting":"Result Pending","state.settling":"Settling","nav.home":"Duel","nav.battle":"Battle","nav.wallet":"Wallet","nav.records":"Records","win.long":"LONG WINS","win.short":"SHORT WINS","win.draw":"Draw · Refunded","chart.up":"Up","chart.down":"Down","chart.waiting":"Waiting for price feed…",
+"chart.title":"📈 BTC/USDT · 1m Candles","chart.titleLine":"📈 BTC/USDT · Live Line","chart.line":"Line","chart.candles":"Candles","chart.startPrice":"Start Price","road.title":"🎲 Road","road.longWin":"Long won","road.shortWin":"Short won","road.draw":"Draw","road.empty":"No settled rounds yet","stats.rounds":"Rounds Settled","stats.pool":"Total Paid Out","state.betting":"Betting Open","state.waiting":"Result Pending","state.settling":"Settling","nav.home":"Duel","nav.play":"Modes","nav.fight":"Battle Now","win.settling":"Settling Soon","win.paying":"Paying rewards…","mode.midShort":"3-Min","nav.wallet":"Wallet","nav.records":"Records","nav.invite":"Invite","mode.title":"Choose Mode","mode.current":"Current","mode.close":"Close","mode.rules":"Pick a side → price locks → settle vs the start price. Winners split the losers pool (5% fee). Ties refund.","win.long":"LONG WINS","win.short":"SHORT WINS","win.draw":"Draw · Refunded","chart.up":"Up","chart.down":"Down","chart.waiting":"Waiting for price feed…",
 "chart.win":"WIN","chart.lose":"LOSE","chart.draw":"DRAW","chart.lockPrice":"LOCK","chart.closePrice":"CLOSE",
 "phase.betting":"Betting Open","phase.locked":"Locked · Settling",
 "cd.cutoff":"Betting Closes In","cd.locked":"Betting Closed","cd.lockSoon":"Betting stops 15s before lock — confirm soon",
@@ -898,7 +919,7 @@ en: {
 "toast.refCopied":"Invite link copied","toast.copyFail":"Copy failed — long-press to copy manually","toast.refNeedWallet":"Connect your wallet to generate your invite link",
 "toast.walletFail":"Connection failed: ","toast.walletNotFound":"Wallet not available or not detected",
 "toast.ethersFail":"ethers.js failed to load — check your network and refresh","toast.noAuth":"Wallet authorization not granted",
-"toast.modeSpeed":"Switched: 1-min Speed","toast.modeClassic":"Switched: 5-min Classic",
+"toast.modeSpeed":"Switched: 1-min Speed","toast.modeMid":"Switched: 3-min Mid","toast.modeClassic":"Switched: 5-min Classic",
 "toast.refBound":"Referrer bound","toast.refAlreadyBound":"You already have a referrer bound — no need to bind again","toast.refCheckFail":"Failed to read binding status — try again later","toast.refInvite":"You entered via a friend's invite — after connecting, confirm the referrer to bind",
 "toast.tokenNotConfigured":"Testnet token not configured: deploy MockSI and fill TOKENS.SI.addressesByChain[97] first",
 "toast.cancelled":"You cancelled the transaction","toast.betFail":"Bet failed: ","toast.refresh":"Refreshed",
@@ -1204,8 +1225,8 @@ async function poll24h() {
    发现顺序：latestRoundId(mode, token)（合约待补，未上时跳过）
    → nextRoundId() - 1 → RoundCreated 事件按时间窗口挑当前局。
    无合约时为演示态，才用本地时间窗口（局号仅作展示，不下注）。 */
-function roundDuration() { return S.mode === "speed" ? 60 : 300; }
-function modeNum() { return S.mode === "speed" ? 0 : 1; }
+function roundDuration() { return S.mode === "speed" ? 60 : S.mode === "mid" ? 180 : 300; }
+function modeNum() { return S.mode === "speed" ? 0 : S.mode === "mid" ? 2 : 1; }
 let chainRound = null, lastChainId = null, lastRoundId = null, lastPhase = null;
 function normRound(rd) {
   return {
@@ -1419,14 +1440,13 @@ function settlePrevRound(prevId) {
   S.chartClose = close ? { price: close, time: Date.now() / 1000 } : null;
   S.chartResult = myWin ? "win" : myLose ? "lose" : (rec.result === "draw" ? "draw" : null);
   flashScreen();
-  showResultBanner(rec.result);
+  showResultBanner(rec.result, myWin, myLose);
   renderRoad();
   S.stats.rounds++;
   S.stats.paid += (S.pools.long || 0) + (S.pools.short || 0);
   try { localStorage.setItem("dk_stats_v1", JSON.stringify(S.stats)); } catch (e) {}
   S.lastSettledId = prevId;
   renderStats();
-  bgmImpact(myWin ? "win" : myLose ? "lose" : "neutral");
   if (window.__bgBurst) window.__bgBurst(rec.result);
   const csS = $("chartState"); if (csS) csS.textContent = t("state.settling");
   if (myWin) celebrateWin();
@@ -1565,12 +1585,12 @@ function updateBetBtn() {
     requestAnimationFrame(frame);
     const dt = Math.min(0.05, (now - last) / 1000); last = now;
     const gap = Math.abs((S.powerPct || 50) - 50) / 50;
-    phase += dt * (0.10 + gap * 0.45);
+    phase += dt * (0.16 + gap * 0.65);
     const c = tintRGB();
     ctx.clearRect(0, 0, W, H);
     const horizon = H * 0.30, cx = W / 2;
     const glow = ctx.createRadialGradient(cx, horizon, 10, cx, horizon, W * 0.75);
-    glow.addColorStop(0, `rgba(${c[0]},${c[1]},${c[2]},${burst ? 0.20 : 0.07})`);
+    glow.addColorStop(0, `rgba(${c[0]},${c[1]},${c[2]},${burst ? 0.26 : 0.10})`);
     glow.addColorStop(1, "rgba(0,0,0,0)");
     ctx.fillStyle = glow;
     ctx.fillRect(0, 0, W, H);
@@ -1578,8 +1598,8 @@ function updateBetBtn() {
     for (let i = 0; i < rows; i++) {
       const z = ((i + (phase % 1)) % rows) / rows;
       const y = horizon + Math.pow(z, 2.1) * (H - horizon) * 1.08;
-      const alpha = 0.04 + z * 0.30;
-      const rad = 0.6 + z * 2.1;
+      const alpha = 0.07 + z * 0.40;
+      const rad = 0.8 + z * 2.6;
       ctx.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},${alpha})`;
       for (let j = -cols; j <= cols; j++) {
         const x = cx + j * (W / 11) * Math.pow(z, 1.35);
@@ -1903,7 +1923,7 @@ function renderRecords() {
       + (cur ? '<div class="rec"><div class="rec-top"><span>' + t("rec.prevRound", { id: cur.id }) + '</span><span>' + (cur.result === "long" ? t("rec.longWin") : cur.result === "short" ? t("rec.shortWin") : cur.result === "draw" ? t("rec.drawR") : "—") + '</span></div><div class="rec-sub">' + t("rec.lockSettle", { lock: fmtPrice(cur.lock), close: fmtPrice(cur.close) }) + '</div></div>' : "");
   } else {
     if (!S.rounds.length) { list.innerHTML = '<div class="empty">' + t("rec.noHistory") + '</div>'; return; }
-    list.innerHTML = S.rounds.slice(0, 15).map((r) => '<div class="rec"><div class="rec-top"><span>' + t("round.new", { id: r.id }) + ' · ' + (r.mode === "speed" ? t("mode.speedShort") : t("mode.classicShort")) + '</span><span>' + (r.result === "long" ? t("rec.longWin") : r.result === "short" ? t("rec.shortWin") : r.result === "draw" ? t("rec.drawR") : "—") + '</span></div><div class="rec-sub">' + new Date(r.at).toLocaleString(LANG === "zh" ? "zh-CN" : "en-US") + ' · ' + t("rec.lockSettle", { lock: fmtPrice(r.lock), close: fmtPrice(r.close) }) + '</div></div>').join("");
+    list.innerHTML = S.rounds.slice(0, 15).map((r) => '<div class="rec"><div class="rec-top"><span>' + t("round.new", { id: r.id }) + ' · ' + (r.mode === "speed" ? t("mode.speedShort") : r.mode === "mid" ? t("mode.midShort") : t("mode.classicShort")) + '</span><span>' + (r.result === "long" ? t("rec.longWin") : r.result === "short" ? t("rec.shortWin") : r.result === "draw" ? t("rec.drawR") : "—") + '</span></div><div class="rec-sub">' + new Date(r.at).toLocaleString(LANG === "zh" ? "zh-CN" : "en-US") + ' · ' + t("rec.lockSettle", { lock: fmtPrice(r.lock), close: fmtPrice(r.close) }) + '</div></div>').join("");
   }
 }
 
@@ -2136,12 +2156,39 @@ function bgmPad(when, dur, root) {
     o.start(when); o.stop(when + dur + 0.05);
   });
 }
+function bgmRiser(dur) {
+  if (!BGM.ctx || !BGM.on || BGM.muted) return;
+  const c = BGM.ctx, t0 = c.currentTime + 0.02;
+  const len = Math.floor(c.sampleRate * dur);
+  const buf = c.createBuffer(1, len, c.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+  const src = c.createBufferSource(); src.buffer = buf; src.loop = true;
+  const f = c.createBiquadFilter(); f.type = "bandpass"; f.Q.value = 1.4;
+  f.frequency.setValueAtTime(400, t0);
+  f.frequency.exponentialRampToValueAtTime(4200, t0 + dur);
+  const g = c.createGain();
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.exponentialRampToValueAtTime(0.16, t0 + dur * 0.85);
+  g.gain.exponentialRampToValueAtTime(0.001, t0 + dur);
+  src.connect(f); f.connect(g); g.connect(BGM.musicGain);
+  src.start(t0); src.stop(t0 + dur + 0.05);
+}
+function bgmPluck(when, freq, vel) {
+  const c = BGM.ctx;
+  const o = c.createOscillator(), g = c.createGain();
+  o.type = "triangle"; o.frequency.value = freq;
+  g.gain.setValueAtTime(vel, when);
+  g.gain.exponentialRampToValueAtTime(0.001, when + 0.32);
+  o.connect(g); g.connect(BGM.musicGain);
+  o.start(when); o.stop(when + 0.35);
+}
 function bgmImpact(kind) {
   if (!BGM.ctx || !BGM.on || BGM.muted) return;
   const t0 = BGM.ctx.currentTime + 0.02;
   bgmTaiko(t0, 1.0);
   bgmCrash(t0, 0.5);
-  if (kind === "win") { bgmHorn(t0, 0.9); bgmTaiko(t0 + 0.2, 0.75); }
+  if (kind === "win") { bgmHorn(t0, 0.9); bgmTaiko(t0 + 0.2, 0.75); [523.25, 659.25, 783.99, 1046.5].forEach((fr, i) => bgmPluck(t0 + 0.05 + i * 0.07, fr, 0.13)); }
   else if (kind === "lose") { bgmTaiko(t0 + 0.22, 0.8); }
   else if (kind === "lock") { bgmHorn(t0, 0.6); }
 }
@@ -2195,6 +2242,16 @@ function bgmSchedule() {
     if (st % 32 === 31) { bgmTom(when, 82, 0.55); bgmTom(when + beat / 2, 66, 0.6); }
     if (st % 32 === 0) bgmHorn(when, beat * 8);
     if (st % 64 === 0) bgmPad(when, beat * 16, ROOTS[Math.floor(st / 64) % 4]);
+    if (st % 64 === 56) bgmRiser(beat * 7);
+    if (st % 2 === 0) {
+      const bo = c.createOscillator(), bg2 = c.createGain(), bf = c.createBiquadFilter();
+      bo.type = "sawtooth"; bo.frequency.value = ROOTS[Math.floor(st / 64) % 4];
+      bf.type = "lowpass"; bf.frequency.value = 260;
+      bg2.gain.setValueAtTime(0.09, when);
+      bg2.gain.exponentialRampToValueAtTime(0.001, when + beat * 0.9);
+      bo.connect(bf); bf.connect(bg2); bg2.connect(BGM.musicGain);
+      bo.start(when); bo.stop(when + beat);
+    }
     BGM.step++;
     BGM.nextTime += beat;
   }
@@ -2361,7 +2418,7 @@ function drawCandles() {
   ctx.font = "10px sans-serif";
   ctx.textBaseline = "middle";
   // 网格 + 右侧价格刻度
-  ctx.strokeStyle = "rgba(35,44,68,.9)";
+  ctx.strokeStyle = "rgba(42,50,64,.55)";
   ctx.fillStyle = "#8b96ad";
   ctx.lineWidth = 1;
   for (let i = 0; i <= 3; i++) {
@@ -2500,7 +2557,7 @@ function drawLine() {
   const tx = (ms) => x0 + Math.max(0, Math.min(1, (ms - t0) / (t1 - t0))) * (x1 - x0);
   ctx.font = "10px sans-serif";
   ctx.textBaseline = "middle";
-  ctx.strokeStyle = "rgba(35,44,68,.9)";
+  ctx.strokeStyle = "rgba(42,50,64,.55)";
   ctx.fillStyle = "#8b96ad";
   ctx.lineWidth = 1;
   for (let i = 0; i <= 3; i++) {
@@ -2562,16 +2619,24 @@ function drawLine() {
   ctx.fillText(pv, x1 + 2 + pw / 2, hy);
   if (S.cdSec !== null && S.cdSec !== undefined && S.cdSec >= 0) {
     const label = S.cdSec + "s";
-    ctx.font = "bold 11px sans-serif";
-    const bw = ctx.measureText(label).width + 14;
+    ctx.font = "bold 12px sans-serif";
+    const pulse = 1 + 0.07 * Math.max(0, 1 - (performance.now() % 1000) / 500);
+    const bw = (ctx.measureText(label).width + 18) * pulse;
+    const bh = 21 * pulse;
     const bx = Math.max(x0, Math.min(hx - bw / 2, x1 - bw));
-    const by = Math.max(2, hy - 36);
-    ctx.fillStyle = "#ff8c42";
-    ctx.fillRect(bx, by, bw, 18);
-    ctx.beginPath(); ctx.moveTo(hx - 4, by + 18); ctx.lineTo(hx + 4, by + 18); ctx.lineTo(hx, by + 23); ctx.closePath(); ctx.fill();
+    const by = Math.max(2, hy - 40);
+    const urgentCd = S.cdSec <= 5;
+    const grd = ctx.createLinearGradient(bx, by, bx, by + bh);
+    if (urgentCd) { grd.addColorStop(0, "#ff6b81"); grd.addColorStop(1, "#d61c4e"); }
+    else { grd.addColorStop(0, "#ffb03a"); grd.addColorStop(1, "#f2762e"); }
+    ctx.fillStyle = grd;
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(bx, by, bw, bh, 7); else ctx.rect(bx, by, bw, bh);
+    ctx.fill();
+    ctx.beginPath(); ctx.moveTo(hx - 4.5, by + bh); ctx.lineTo(hx + 4.5, by + bh); ctx.lineTo(hx, by + bh + 5.5); ctx.closePath(); ctx.fill();
     ctx.fillStyle = "#fff";
     ctx.textAlign = "center";
-    ctx.fillText(label, bx + bw / 2, by + 9);
+    ctx.fillText(label, bx + bw / 2, by + bh / 2 + 0.5);
   }
   ctx.fillStyle = "#5d6a86";
   ctx.font = "10px sans-serif";
@@ -2593,7 +2658,7 @@ function renderRoad() {
   if (!rs.length) { g.innerHTML = '<span class="road-empty">' + t("road.empty") + "</span>"; return; }
   g.innerHTML = rs.map((r) => '<span class="rdot ' + r.result + '"></span>').join("");
 }
-function showResultBanner(result) {
+function showResultBanner(result, myWin, myLose) {
   if (!result) return;
   let b = $("resultBanner");
   if (!b) {
@@ -2601,10 +2666,18 @@ function showResultBanner(result) {
     b.id = "resultBanner";
     document.body.appendChild(b);
   }
-  b.className = "result-banner show " + result;
-  b.textContent = result === "draw" ? t("win.draw") : result === "long" ? "↗ " + t("win.long") : "↘ " + t("win.short");
   clearTimeout(showResultBanner._tm);
-  showResultBanner._tm = setTimeout(() => { b.classList.remove("show"); }, 1800);
+  clearTimeout(showResultBanner._tm2);
+  b.className = "result-banner show settling";
+  b.innerHTML = '<div class="rb-ring"></div><div class="rb-main">' + t("win.settling") + '</div><div class="rb-sub"></div>';
+  bgmRiser(0.85);
+  showResultBanner._tm = setTimeout(() => {
+    const main = result === "draw" ? t("win.draw") : result === "long" ? "↗ " + t("win.long") : "↘ " + t("win.short");
+    b.className = "result-banner show " + result;
+    b.innerHTML = '<div class="rb-main">' + main + '</div><div class="rb-sub">' + t("win.paying") + '</div>';
+    bgmImpact(myWin ? "win" : myLose ? "lose" : "neutral");
+    showResultBanner._tm2 = setTimeout(() => { b.classList.remove("show"); }, 2000);
+  }, 850);
 }
 
 /* ---------------- 入场仪式（纯展示闪屏，1.2 秒内自动走） ----------------
@@ -2692,6 +2765,12 @@ function bindUI() {
     };
   });
 }
+function syncModeSheet() {
+  const c = $("sheetClassic"), s = $("sheetSpeed"), m = $("sheetMid");
+  if (c) c.classList.toggle("on", S.mode === "classic");
+  if (s) s.classList.toggle("on", S.mode === "speed");
+  if (m) m.classList.toggle("on", S.mode === "mid");
+}
 function setMode(m) {
   if (!enabledModes().includes(m)) return; // 未开启的模式不响应
   if (S.mode === m) return;
@@ -2702,7 +2781,8 @@ function setMode(m) {
   lastRoundId = null; lastPhase = null;
   if (S.contract) discoverRound();
   tickRound();
-  toast(m === "speed" ? t("toast.modeSpeed") : t("toast.modeClassic"));
+  toast(m === "speed" ? t("toast.modeSpeed") : m === "mid" ? t("toast.modeMid") : t("toast.modeClassic"));
+  syncModeSheet();
 }
 function setSide(s) {
   S.side = s;
@@ -2765,16 +2845,30 @@ function init() {
     if (wg && wg.closest(".card")) wg.closest(".card").id = "walletCard";
     const rl = document.querySelector(".rec-list");
     if (rl && rl.closest(".card")) rl.closest(".card").id = "recordsCard";
-    document.querySelectorAll(".card").forEach((c) => { if (c.querySelector(".ref-box") || c.querySelector(".fee-bars")) c.style.display = "none"; });
+    document.querySelectorAll(".card").forEach((c) => {
+      if (c.querySelector(".fee-bars")) c.style.display = "none";
+      if (c.querySelector(".ref-box")) { c.id = "inviteCard"; c.style.display = "none"; }
+    });
     document.querySelectorAll("#tabbar button").forEach((b) => {
       b.onclick = () => {
+        if (b.dataset.act === "modes") { syncModeSheet(); $("modeSheet").classList.add("open"); return; }
         document.querySelectorAll("#tabbar button").forEach((x) => x.classList.remove("on"));
         b.classList.add("on");
+        if (b.dataset.act === "invite") {
+          const ic = $("inviteCard");
+          if (ic) { ic.style.display = ""; ic.scrollIntoView({ behavior: "smooth", block: "start" }); }
+          return;
+        }
         const tgt = b.dataset.go;
         if (tgt === "top") window.scrollTo({ top: 0, behavior: "smooth" });
         else { const el = document.getElementById(tgt); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); }
       };
     });
+    $("sheetClose").onclick = () => $("modeSheet").classList.remove("open");
+    $("modeSheet").addEventListener("click", (e) => { if (e.target === $("modeSheet")) $("modeSheet").classList.remove("open"); });
+    $("sheetClassic").onclick = () => { setMode("classic"); $("modeSheet").classList.remove("open"); };
+    $("sheetSpeed").onclick = () => { setMode("speed"); $("modeSheet").classList.remove("open"); };
+    $("sheetMid").onclick = () => { setMode("mid"); $("modeSheet").classList.remove("open"); };
   });
   safeStep("refLink", updateRefLink);
   safeStep("calc", updateCalc);
@@ -2803,11 +2897,22 @@ setTimeout(function () {
   }
 }, 2000);
 </script>
+<div class="sheet" id="modeSheet">
+  <div class="sheet-card">
+    <div class="sheet-title" data-i18n="mode.title">选择玩法</div>
+    <button class="mode-opt" id="sheetSpeed"><span data-i18n-html="mode.speed">⚡ 1 分钟极速<small>每分钟一局 · 快节奏</small></span><span class="mo-tag" data-i18n="mode.current">当前</span></button>
+    <button class="mode-opt" id="sheetMid"><span data-i18n-html="mode.mid">🕒 3 分钟进阶<small>每 3 分钟一局 · 攻守兼备</small></span><span class="mo-tag" data-i18n="mode.current">当前</span></button>
+    <button class="mode-opt" id="sheetClassic"><span data-i18n-html="mode.classic">🕐 5 分钟经典<small>每 5 分钟一局 · 更从容</small></span><span class="mo-tag" data-i18n="mode.current">当前</span></button>
+    <div class="sheet-rules" data-i18n="mode.rules">选方向 → 到点锁价 → 结算比开始价高低定胜负，赢家分输家奖池（平台费 5%）。平局退本金。</div>
+    <button class="sheet-close" id="sheetClose" data-i18n="mode.close">关闭</button>
+  </div>
+</div>
 <nav class="tabbar" id="tabbar">
-  <button data-go="top" class="on"><span class="tb-ico">🏠</span><span data-i18n="nav.home">对决</span></button>
-  <button data-go="chartCard"><span class="tb-ico">⚔️</span><span data-i18n="nav.battle">战场</span></button>
+  <button data-act="modes"><span class="tb-ico">🎮</span><span data-i18n="nav.play">玩法</span></button>
   <button data-go="walletCard"><span class="tb-ico">👛</span><span data-i18n="nav.wallet">钱包</span></button>
+  <button data-go="betPanel" class="tb-center on"><span class="tb-ico">⚔️</span><span data-i18n="nav.fight">马上战斗</span></button>
   <button data-go="recordsCard"><span class="tb-ico">📜</span><span data-i18n="nav.records">记录</span></button>
+  <button data-act="invite"><span class="tb-ico">🎁</span><span data-i18n="nav.invite">邀请</span></button>
 </nav>
 </body>
 </html>
