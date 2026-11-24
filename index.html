@@ -400,13 +400,13 @@ body{padding-bottom:78px}
 .chip{flex:1;background:#1a1f2c;border:1px solid #262d3d;color:#aeb8cc;border-radius:8px;padding:9px 2px;font-size:12.5px}
 .chip.sel{border-color:#e8ecf4;color:#fff;background:#232a3a}
 .payout-line{text-align:right;color:#8b96ad}
-.road-grid .rdot{width:25px;height:25px}
 .road-card{max-height:none}
 .side-btn .s-odds,.side-btn .s-pool{display:none}
+/* 终局覆盖：!important 收尾，前面任何同名规则不再生效 */
+.road-grid{display:grid !important;grid-template-rows:repeat(6,25px) !important;grid-auto-flow:column !important;grid-auto-columns:25px !important;gap:4px !important;overflow-x:auto !important;justify-content:start !important;padding:2px 0 !important;margin-top:6px !important;min-height:0 !important}
+.road-grid .rdot{width:25px !important;height:25px !important}
 
 .stat-k{font-size:11px;color:var(--muted);order:1}
-.road-grid{display:grid;grid-template-rows:repeat(6,13px);grid-auto-flow:column;grid-auto-columns:13px;gap:3px;overflow-x:auto;justify-content:start;padding:2px 0;margin-top:6px;min-height:0}
-.road-grid .rdot{width:13px;height:13px}
 .rdot.empty{visibility:hidden}
 .rdot.new{box-shadow:0 0 0 3px rgba(233,207,143,.4);animation:rdPulse .7s ease-in-out infinite alternate}
 @keyframes rdPulse{from{transform:scale(1)}to{transform:scale(1.2)}}
@@ -491,7 +491,7 @@ body.no-fx .src-dot{animation:none!important}
     </div>
     <div class="top-controls">
       <button class="mini-btn" id="langBtn" title="切换语言 / Switch language">EN</button>
-      <button class="mini-btn" id="bgmBtn" title="音乐开关 / Music">🔇</button>
+      <button class="mini-btn" id="bgmBtn" title="音乐开关 / Music">🔊</button>
       <input type="range" id="bgmVol" class="vol" min="0" max="100" value="80" aria-label="音量 / Volume">
       <button class="mini-btn" id="fxBtn" title="特效开关 / Effects">✨ 特效</button>
     </div>
@@ -535,13 +535,9 @@ body.no-fx .src-dot{animation:none!important}
     <div class="side-pick">
       <button class="side-btn long sel" id="pickLong">
         <div class="s-name" data-i18n="bet.long">↗ 看涨</div>
-        <div class="s-odds"><span data-i18n="bet.odds">赔率</span> <span id="oddsLong">—</span> <span data-i18n="bet.times">倍</span></div>
-        <div class="s-pool"><span data-i18n="pool.long">多池</span> <span id="poolLong">0</span> $SI</div>
       </button>
       <button class="side-btn short" id="pickShort">
         <div class="s-name" data-i18n="bet.short">↘ 看跌</div>
-        <div class="s-odds"><span data-i18n="bet.odds">赔率</span> <span id="oddsShort">—</span> <span data-i18n="bet.times">倍</span></div>
-        <div class="s-pool"><span data-i18n="pool.short">空池</span> <span id="poolShort">0</span> $SI</div>
       </button>
     </div>
     <div class="payout-line" id="payoutLine">—</div>
@@ -2654,6 +2650,15 @@ function drawLine() {
   if (!S.linePts || !S.linePts.length) rebuildLineTicks();
   const livePts = S.ticks.filter((k) => k.t >= t0 - 30000 && k.t <= now + 1000);
   let pts = livePts.length >= 30 ? livePts : ((S.linePts && S.linePts.length >= 8) ? S.linePts.slice() : livePts);
+  // 轴钳制：窗口内价格先按四分位距收边，单个坏 tick 被压回正常带，画不出满幅针
+  {
+    const wp = pts.filter((k) => k.t >= t0).map((k) => k.p).sort((a, b) => a - b);
+    if (wp.length >= 8) {
+      const q1 = wp[Math.floor(wp.length * 0.25)], q3 = wp[Math.floor(wp.length * 0.75)];
+      const iqr = Math.max(q3 - q1, 1), loB = q1 - iqr * 3, hiB = q3 + iqr * 3;
+      pts = pts.map((k) => ({ t: k.t, p: Math.min(hiB, Math.max(loB, k.p)) }));
+    }
+  }
   if (S.price) {
     const lastT = pts.length ? pts[pts.length - 1].t : 0;
     if (now - lastT > 1500) pts.push({ t: now, p: S.price });
