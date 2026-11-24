@@ -368,9 +368,9 @@ body{padding-bottom:78px}
 .stat{padding:6px 8px}
 .stat-v{font-size:16px}
 .stat-k{font-size:11px}
-.road-card{margin-top:8px;padding:6px 12px;background:linear-gradient(180deg,#0d1119,#090c12);max-height:118px;overflow:hidden}
+.road-card{margin-top:8px;padding:6px 12px;background:linear-gradient(180deg,#0d1119,#090c12);max-height:104px;overflow:hidden}
 .chart-card{margin-top:8px;background:linear-gradient(180deg,#0d1119,#090c12)}
-#kline{height:216px}
+#kline{height:196px}
 .ct-btn{white-space:nowrap;padding:4px 11px;font-size:12px}
 #betPanel{padding:9px 10px}
 .side-btn{padding:8px 8px;font-size:15px}
@@ -2107,7 +2107,7 @@ const BGM = { ctx: null, master: null, musicGain: null, beepGain: null, on: fals
 function bgmLoadState() {
   try {
     const v = JSON.parse(localStorage.getItem("qk_bgm_v1") || "{}");
-    return { muted: !!v.muted, volume: typeof v.volume === "number" ? v.volume : 0.8 };
+    return { muted: "muted" in v ? !!v.muted : false, volume: typeof v.volume === "number" ? v.volume : 0.8 };
   } catch (e) { return { muted: false, volume: 0.8 }; }
 }
 function bgmSave() {
@@ -2307,6 +2307,15 @@ function bgmSchedule() {
     BGM.nextTime += beat;
   }
 }
+/* 音乐看门狗：TP 等钱包浏览器切后台/弹窗会挂起音频，回到前台自动拉活 */
+setInterval(() => {
+  try {
+    if (BGM.muted) return;
+    if (BGM.ctx && BGM.ctx.state !== "running") BGM.ctx.resume();
+    if (BGM.on && BGM.ctx && !BGM.timer) { BGM.timer = setInterval(bgmSchedule, 100); }
+    if (!BGM.on && BGM.ctx) startBgm();
+  } catch (e) {}
+}, 2000);
 /* 首次点按任意处即解锁/拉起音乐（移动端 WebView 自动播放策略） */
 document.addEventListener("pointerdown", () => {
   try {
@@ -2685,7 +2694,7 @@ function drawLine() {
       const w2 = ctx.measureText(caption).width;
       const tw2 = Math.max(w1, w2) + 14, th = 30;
       const bx = Math.min(Math.max(cx - tw2 / 2, x0), x1 - tw2);
-      let by = cy - th - 8; if (by < padT) by = cy + 8;
+      let by = cy + 10; if (by + th > H - padB) by = cy - th - 10; if (by < padT) by = padT;
       ctx.fillStyle = "#e8e13a";
       ctx.beginPath();
       if (ctx.roundRect) ctx.roundRect(bx, by, tw2, th, 5); else ctx.rect(bx, by, tw2, th);
