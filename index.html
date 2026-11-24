@@ -328,7 +328,7 @@ input{font-family:inherit}
 .stat{flex:1;background:linear-gradient(180deg,#0d1119,#090c12);border:1px solid var(--line);border-radius:var(--radius);padding:10px 14px;text-align:center}
 .stat-v{font-size:19px;font-weight:800;color:#f5c542;font-variant-numeric:tabular-nums}
 .stat-k{font-size:11px;color:var(--muted);margin-top:2px}
-.chart-state{position:absolute;top:8px;left:10px;z-index:3;background:rgba(10,14,24,.85);border:1px solid var(--line);color:#e8edf7;font-size:11px;font-weight:700;padding:3px 10px;border-radius:99px}
+.chart-state{position:absolute;top:6px;left:8px;z-index:3;background:rgba(10,14,24,.55);border:1px solid rgba(255,255,255,.08);color:rgba(232,237,247,.85);font-size:10px;font-weight:700;padding:2px 8px;border-radius:99px;pointer-events:none}
 .payout-line{margin-top:10px;text-align:right;font-size:13px;font-weight:700;color:#f5c542;font-variant-numeric:tabular-nums;min-height:18px}
 #bgFx{position:fixed;inset:0;z-index:-1;pointer-events:none}
 #chartCard{background:rgba(10,14,24,.42)}
@@ -350,8 +350,8 @@ body{padding-bottom:78px}
 .result-banner.vs{background:rgba(3,5,9,.55)}
 .rb-vs{position:absolute;inset:0;display:flex}
 .rb-side{flex:1;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:900}
-.rb-side.long{background:linear-gradient(120deg,rgba(18,80,42,.93),rgba(5,26,14,.95));color:#4ade80;clip-path:polygon(0 0,100% 0,84% 100%,0 100%)}
-.rb-side.short{background:linear-gradient(240deg,rgba(96,16,32,.93),rgba(30,5,11,.95));color:#fb7185;clip-path:polygon(16% 0,100% 0,100% 100%,0 100%);margin-left:-13%}
+.rb-side.long{background:linear-gradient(120deg,rgba(22,163,74,.96),rgba(6,40,20,.97));color:#bbf7d0;clip-path:polygon(0 0,100% 0,84% 100%,0 100%)}
+.rb-side.short{background:linear-gradient(240deg,rgba(225,29,72,.96),rgba(52,8,18,.97));color:#ffe4e6;clip-path:polygon(16% 0,100% 0,100% 100%,0 100%);margin-left:-13%}
 .rb-bolt{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) rotate(-4deg);font-size:76px;font-weight:900;font-style:italic;text-shadow:0 6px 34px rgba(0,0,0,.75);z-index:2}
 .rb-bolt em{color:#4ade80}
 .rb-bolt strong{color:#fb7185}
@@ -368,17 +368,19 @@ body{padding-bottom:78px}
 .stat{padding:6px 8px}
 .stat-v{font-size:16px}
 .stat-k{font-size:11px}
-.road-card{margin-top:8px;padding:7px 12px;background:linear-gradient(180deg,#0d1119,#090c12)}
+.road-card{margin-top:8px;padding:6px 12px;background:linear-gradient(180deg,#0d1119,#090c12);max-height:118px;overflow:hidden}
 .chart-card{margin-top:8px;background:linear-gradient(180deg,#0d1119,#090c12)}
-#kline{height:158px}
+#kline{height:216px}
 .ct-btn{white-space:nowrap;padding:4px 11px;font-size:12px}
-#betPanel{padding:11px 12px}
+#betPanel{padding:9px 10px}
+.side-btn{padding:8px 8px;font-size:15px}
+#betAmt{font-size:15px;padding:7px 10px}
 .stats{display:flex;justify-content:flex-end;gap:16px;margin-top:6px}
 .stat{flex:none;background:none;border:none;padding:0;display:flex;align-items:baseline;gap:6px}
 .stat-v{font-size:13px;color:#e9cf8f;order:2}
 .stat-k{font-size:11px;color:var(--muted);order:1}
-.road-grid{display:grid;grid-template-rows:repeat(6,19px);grid-auto-flow:column;grid-auto-columns:19px;gap:4px;overflow-x:auto;justify-content:start;padding:2px 0;margin-top:6px;min-height:0}
-.road-grid .rdot{width:19px;height:19px}
+.road-grid{display:grid;grid-template-rows:repeat(6,13px);grid-auto-flow:column;grid-auto-columns:13px;gap:3px;overflow-x:auto;justify-content:start;padding:2px 0;margin-top:6px;min-height:0}
+.road-grid .rdot{width:13px;height:13px}
 .rdot.empty{visibility:hidden}
 .rdot.new{box-shadow:0 0 0 3px rgba(233,207,143,.4);animation:rdPulse .7s ease-in-out infinite alternate}
 @keyframes rdPulse{from{transform:scale(1)}to{transform:scale(1.2)}}
@@ -2386,7 +2388,7 @@ function beepCountdown(kind, left) {
    中继 / Vision / Bitget / Gate 任一源的 tick 都进同一聚合器，换源不断线；
    无 tick 时显示“等待行情”占位，绝不白屏；canvas 自绘（无外部图表库），
    devicePixelRatio 处理，宽度自适应，高 200px；重绘节流 500ms 一次。 */
-const KLINE = { bucket: 60000, max: 60, dirty: false };
+const KLINE = { bucket: 60000, max: 30, dirty: false };
 function intakeCandle(p) {
   const now = Date.now();
   const b = Math.floor(now / KLINE.bucket) * KLINE.bucket;
@@ -2456,7 +2458,7 @@ function drawCandles() {
   const W = cv.width / dpr, H = cv.height / dpr;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, W, H);
-  const cs = S.candles;
+  const cs = S.candles.slice(-KLINE.max);
   const em = $("chartEmpty");
   if (cs.length < 2) { if (em) em.classList.remove("hide"); return; }
   if (em) em.classList.add("hide");
@@ -2595,8 +2597,8 @@ function drawLine() {
   const em = $("chartEmpty");
   const now = Date.now();
   const win = S.viewWin;
-  const t0 = win ? win.start * 1000 : now - 300000;
-  const t1 = win ? win.end * 1000 : now + 60000;
+  const t0 = now - 900000;
+  const t1 = now + 5000;
   const pts = S.ticks.filter((k) => k.t >= t0 - 30000 && k.t <= now + 1000);
   if (pts.length < 2 || !S.price) { if (em) em.classList.remove("hide"); return; }
   if (em) em.classList.add("hide");
@@ -2607,8 +2609,8 @@ function drawLine() {
   if (winPrices.length >= 8) {
     const srt = [...winPrices].sort((a, b) => a - b);
     const q1 = srt[Math.floor(srt.length * 0.25)], q3 = srt[Math.floor(srt.length * 0.75)];
-    const iqr = Math.max(q3 - q1, S.price * 0.0002);
-    const fHi = q3 + 3 * iqr, fLo = q1 - 3 * iqr;
+    const iqr = Math.max(q3 - q1, S.price * 0.00015);
+    const fHi = q3 + 1.6 * iqr, fLo = q1 - 1.6 * iqr;
     for (const p of winPrices) { if (p <= fHi && p > hi) hi = p; if (p >= fLo && p < lo) lo = p; }
   } else {
     for (const p of winPrices) { if (p > hi) hi = p; if (p < lo) lo = p; }
@@ -2616,11 +2618,11 @@ function drawLine() {
   if (!isFinite(hi)) { hi = S.price; lo = S.price; }
   if (S.chartLock) { hi = Math.max(hi, S.chartLock.price); lo = Math.min(lo, S.chartLock.price); }
   hi = Math.max(hi, S.price); lo = Math.min(lo, S.price);
-  const padV = Math.max((hi - lo) * 0.12, S.price * 0.00004);
+  const padV = Math.max((hi - lo) * 0.07, S.price * 0.000025);
   hi += padV; lo -= padV;
   if (!S.axis) S.axis = { hi, lo };
-  S.axis.hi += (hi - S.axis.hi) * 0.35;
-  S.axis.lo += (lo - S.axis.lo) * 0.35;
+  S.axis.hi += (hi - S.axis.hi) * 0.6;
+  S.axis.lo += (lo - S.axis.lo) * 0.6;
   hi = S.axis.hi; lo = S.axis.lo;
   const y = (v) => padT + (1 - (v - lo) / (hi - lo)) * (H - padT - padB);
   const x0 = padL, x1 = W - padR;
@@ -2684,17 +2686,20 @@ function drawLine() {
   const hx = tx(Math.min(now, t1)), hy = y(S.price);
   ctx.beginPath();
   pts.forEach((k, i) => { const X = tx(k.t), Y = y(k.p); if (i === 0) ctx.moveTo(X, Y); else ctx.lineTo(X, Y); });
+  ctx.shadowBlur = 0;
   ctx.lineTo(hx, hy);
-  ctx.strokeStyle = S.phase === "locked" ? "#c8e64a" : "#ff8c42";
-  ctx.lineWidth = 2;
+  ctx.strokeStyle = S.phase === "locked" ? "#d7f75b" : "#ffa02e";
+  ctx.lineWidth = 2.6;
+  ctx.shadowColor = ctx.strokeStyle;
+  ctx.shadowBlur = 5;
   ctx.stroke();
   ctx.lineTo(hx, H - padB);
   ctx.lineTo(tx(pts[0].t), H - padB);
   ctx.closePath();
   ctx.fillStyle = S.phase === "locked" ? "rgba(200,230,74,.07)" : "rgba(255,140,66,.07)";
   ctx.fill();
-  ctx.beginPath(); ctx.arc(hx, hy, 7, 0, Math.PI * 2); ctx.fillStyle = "rgba(255,255,255,.25)"; ctx.fill();
-  ctx.beginPath(); ctx.arc(hx, hy, 3.5, 0, Math.PI * 2); ctx.fillStyle = "#fff"; ctx.fill();
+  ctx.beginPath(); ctx.arc(hx, hy, 9, 0, Math.PI * 2); ctx.fillStyle = "rgba(255,255,255,.22)"; ctx.fill();
+  ctx.beginPath(); ctx.arc(hx, hy, 4.5, 0, Math.PI * 2); ctx.fillStyle = "#fff"; ctx.fill();
   const pv = fmtPrice(S.price).replace("$", "");
   ctx.font = "bold 10px sans-serif";
   const pw = ctx.measureText(pv).width + 8;
@@ -2841,7 +2846,7 @@ function showResultBanner(result, myWin, myLose) {
   if (showResultBanner._raf) cancelAnimationFrame(showResultBanner._raf);
   b.className = "result-banner show vs";
   b.innerHTML = '<div class="rb-vs"><div class="rb-side long"><span>' + t("bet.long") + '</span></div><div class="rb-side short"><span>' + t("bet.short") + '</span></div><div class="rb-bolt"><em>V</em><strong>S</strong></div></div>';
-  bgmRiser(1.1);
+  bgmRiser(1.35);
   setSegs(2);
   showResultBanner._tm = setTimeout(() => {
     const main = result === "draw" ? t("win.draw") : result === "long" ? "↗ " + t("win.long") : "↘ " + t("win.short");
@@ -2851,7 +2856,7 @@ function showResultBanner(result, myWin, myLose) {
     setSegs(3);
     startRain(b, result);
     showResultBanner._tm2 = setTimeout(() => { b.classList.remove("show"); if (showResultBanner._raf) cancelAnimationFrame(showResultBanner._raf); }, 2300);
-  }, 1150);
+  }, 1400);
 }
 
 /* ---------------- 入场仪式（纯展示闪屏，1.2 秒内自动走） ----------------
