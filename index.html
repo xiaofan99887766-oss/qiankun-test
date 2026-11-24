@@ -2388,7 +2388,7 @@ function beepCountdown(kind, left) {
    中继 / Vision / Bitget / Gate 任一源的 tick 都进同一聚合器，换源不断线；
    无 tick 时显示“等待行情”占位，绝不白屏；canvas 自绘（无外部图表库），
    devicePixelRatio 处理，宽度自适应，高 200px；重绘节流 500ms 一次。 */
-const KLINE = { bucket: 60000, max: 30, dirty: false };
+const KLINE = { bucket: 60000, max: 60, dirty: false };
 function intakeCandle(p) {
   const now = Date.now();
   const b = Math.floor(now / KLINE.bucket) * KLINE.bucket;
@@ -2433,8 +2433,14 @@ async function seedKlines() {
       if (rows.length < 10) continue;
       const live = S.candles.filter((c) => c.t > rows[rows.length - 1].t);
       S.candles = rows.concat(live).slice(-KLINE.max);
-      if (!S.ticks.length) S.ticks = rows.map((c) => ({ t: c.t + 59000, p: c.c }));
+      if (S.ticks.length < 30) {
+        const cutoff = S.ticks.length ? S.ticks[0].t : Date.now();
+        const seedTicks = rows.map((c) => ({ t: c.t + 59000, p: c.c })).filter((tk) => tk.t < cutoff);
+        S.ticks = seedTicks.concat(S.ticks);
+      }
       KLINE.dirty = true;
+      drawKline();
+      if (typeof rebuildLineTicks === "function") rebuildLineTicks();
       drawKline();
       return;
     } catch (e) { /* 换下一个源 */ }
@@ -2464,7 +2470,8 @@ function drawCandles() {
   if (em) em.classList.add("hide");
   const padR = 66, padL = 6, padT = 12, padB = 18;
   let hi = -Infinity, lo = Infinity;
-  for (const c of cs) { if (c.h > hi) hi = c.h; if (c.l < lo) lo = c.l; }
+  const csAx = cs.slice(-30);
+  for (const c of csAx) { if (c.h > hi) hi = c.h; if (c.l < lo) lo = c.l; }
   if (S.chartLock) { hi = Math.max(hi, S.chartLock.price); lo = Math.min(lo, S.chartLock.price); }
   if (S.chartClose) { hi = Math.max(hi, S.chartClose.price); lo = Math.min(lo, S.chartClose.price); }
   if (S.price) { hi = Math.max(hi, S.price); lo = Math.min(lo, S.price); }
@@ -2585,6 +2592,16 @@ function setChartType(tp) {
   if (h) h.textContent = S.chartType === "line" ? t("chart.titleLine") : t("chart.title");
   drawKline();
 }
+function rebuildLineTicks() {
+  if (!S.candles || S.candles.length < 10) return;
+  const cs = S.candles.slice(-15);
+  const pts = [];
+  for (const c of cs) {
+    pts.push({ t: c.t, p: c.o }, { t: c.t + 20000, p: c.l }, { t: c.t + 40000, p: c.h }, { t: c.t + 59999, p: c.c });
+  }
+  pts.sort((a, b) => a.t - b.t);
+  S.linePts = pts;
+}
 function drawLine() {
   const cv = $("kline");
   if (!cv) return;
@@ -2599,7 +2616,12 @@ function drawLine() {
   const win = S.viewWin;
   const t0 = now - 900000;
   const t1 = now + 5000;
-  const pts = S.ticks.filter((k) => k.t >= t0 - 30000 && k.t <= now + 1000);
+  if (!S.linePts || !S.linePts.length) rebuildLineTicks();
+  let pts = (S.linePts && S.linePts.length >= 8) ? S.linePts.slice() : S.ticks.filter((k) => k.t >= t0 - 30000 && k.t <= now + 1000);
+  if (S.price) {
+    const lastT = pts.length ? pts[pts.length - 1].t : 0;
+    if (now - lastT > 1500) pts.push({ t: now, p: S.price });
+  }
   if (pts.length < 2 || !S.price) { if (em) em.classList.remove("hide"); return; }
   if (em) em.classList.add("hide");
   const padR = 66, padL = 6, padT = 18, padB = 18;
