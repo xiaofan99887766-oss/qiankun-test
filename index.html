@@ -292,9 +292,25 @@ input{font-family:inherit}
 .chart-legend{font-size:11px;color:var(--muted);white-space:nowrap}
 .chart-legend .lg-up{color:var(--red)} .chart-legend .lg-down{color:var(--green)}
 .chart-wrap{position:relative;padding:2px 6px 8px}
-#kline{width:100%;height:160px;display:block}
+#kline{width:100%;height:190px;display:block}
 .chart-empty{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted);font-size:13px;pointer-events:none;background:rgba(11,15,26,.45)}
 .chart-empty.hide{display:none}
+.chart-toggle{display:flex;gap:4px}
+.ct-btn{background:#1a2338;color:var(--muted);border:1px solid var(--line);border-radius:6px;padding:3px 10px;font-size:11px;cursor:pointer}
+.ct-btn.sel{color:#171204;background:#d8b45a;border-color:transparent;font-weight:700}
+.road-card{margin-top:14px;background:linear-gradient(180deg,#101728,#0b0f1a);border:1px solid var(--line);border-radius:var(--radius);padding:10px 14px}
+.road-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.road-head h2{font-size:14px;letter-spacing:1px}
+.road-legend{font-size:11px;color:var(--muted);white-space:nowrap}
+.rdot{display:inline-block;width:9px;height:9px;border-radius:50%;vertical-align:-1px}
+.rdot.long{background:#ff4d6d}.rdot.short{background:#2fbf71}.rdot.draw{background:#8b96ad}
+.road-grid{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;min-height:14px}
+.road-grid .rdot{width:14px;height:14px}
+.road-empty{color:var(--muted);font-size:12px}
+.result-banner{position:fixed;inset:0;z-index:300;display:grid;place-items:center;font-size:34px;font-weight:800;letter-spacing:2px;pointer-events:none;opacity:0;transition:opacity .25s;background:radial-gradient(circle at 50% 45%,rgba(255,77,109,.28),transparent 65%);color:#ff8fa5}
+.result-banner.short{background:radial-gradient(circle at 50% 45%,rgba(47,191,113,.28),transparent 65%);color:#7fe6ae}
+.result-banner.draw{background:radial-gradient(circle at 50% 45%,rgba(160,170,190,.25),transparent 65%);color:#c6cede;font-size:24px}
+.result-banner.show{opacity:1}
 
 /* ---------- 灯光 / 闪光 / 过场 / 冲击波 ---------- */
 .wrap{position:relative;z-index:1}
@@ -382,10 +398,17 @@ body.no-fx .src-dot{animation:none!important}
   <!-- ===== K 线图 ===== -->
   <section class="chart-card" id="chartCard">
     <div class="chart-head"><h2 data-i18n="chart.title">📈 BTC/USDT · 1 分钟 K 线</h2>
+      <span class="chart-toggle"><button id="ctLine" class="ct-btn" data-i18n="chart.line">分时</button><button id="ctCandle" class="ct-btn" data-i18n="chart.candles">K线</button></span>
       <span class="round-id" id="roundId">第 — 局</span>
       <span class="chart-legend"><span class="lg-up">■ <span data-i18n="chart.up">涨</span></span> <span class="lg-down">■ <span data-i18n="chart.down">跌</span></span> <span id="chartSrc">—</span></span></div>
     <div class="lock-price"><span data-i18n="price.lock">锁定价</span> <b id="lockPrice">—</b>　·　<span data-i18n="price.cur">当前价</span> <b id="curPrice2">—</b>　·　<span data-i18n="price.chg">涨跌</span> <b id="chgNow">—</b></div>
     <div class="chart-wrap"><canvas id="kline" height="160"></canvas><div class="chart-empty" id="chartEmpty" data-i18n="chart.waiting">等待行情…</div></div>
+  </section>
+
+  <!-- ===== 路引 ===== -->
+  <section class="road-card" id="roadCard">
+    <div class="road-head"><h2 data-i18n="road.title">🎲 路引</h2><span class="road-legend"><span class="rdot long"></span> <span data-i18n="road.longWin">多胜</span>　<span class="rdot short"></span> <span data-i18n="road.shortWin">空胜</span>　<span class="rdot draw"></span> <span data-i18n="road.draw">平</span></span></div>
+    <div class="road-grid" id="roadGrid"><span class="road-empty" data-i18n="road.empty">暂无已结算局</span></div>
   </section>
 
   <!-- ===== 下注面板 ===== -->
@@ -750,7 +773,7 @@ zh: {
 "about.text":"多空对决，$SI 链上下注：1 分钟极速局与 5 分钟经典局，赢家分输家池，每局抽 5%（2% 销毁、2% 邀请返佣、1% 运营），纯链上结算。","about.textClassic":"多空对决，$SI 链上下注：5 分钟经典局，赢家分输家池，每局抽 5%（2% 销毁、2% 邀请返佣、1% 运营），纯链上结算。",
 "modal.title":"连接钱包","modal.desc":"请选择你要使用的钱包。仅支持 BSC 链（测试网 chainId 97，部署后可切主网 56）。本站绝不会索要私钥、助记词或密码。","modal.cancel":"取消",
 "footer.text":"乾坤战场 QIANKUN ARENA · $SI 链上下注 v1<br>行情：币安优先 · Bitget 备用 · Gate 兜底 · 结算锚：Chainlink BTC/USD（链上）",
-"chart.title":"📈 BTC/USDT · 1 分钟 K 线","chart.up":"涨","chart.down":"跌","chart.waiting":"等待行情…",
+"chart.title":"📈 BTC/USDT · 1 分钟 K 线","chart.titleLine":"📈 BTC/USDT · 分时","chart.line":"分时","chart.candles":"K线","chart.startPrice":"开始价格","road.title":"🎲 路引","road.longWin":"多胜","road.shortWin":"空胜","road.draw":"平","road.empty":"暂无已结算局","win.long":"做多获胜","win.short":"做空获胜","win.draw":"平局 · 退回本金","chart.up":"涨","chart.down":"跌","chart.waiting":"等待行情…",
 "chart.win":"赢","chart.lose":"输","chart.draw":"平局","chart.lockPrice":"锁定价","chart.closePrice":"收盘价",
 "phase.betting":"下注进行中","phase.locked":"已锁定 · 等待结算",
 "cd.cutoff":"下注截止","cd.locked":"下注已截止","cd.lockSoon":"锁定前 15 秒停止下注，请尽快确认",
@@ -826,7 +849,7 @@ en: {
 "about.text":"Long vs Short, bet with $SI on-chain: 1-min Speed and 5-min Classic rounds, winners split the losers' pool, 5% fee per round (2% burn, 2% referral, 1% ops), fully on-chain settlement.","about.textClassic":"Long vs Short, bet with $SI on-chain: 5-min Classic rounds, winners split the losers' pool, 5% fee per round (2% burn, 2% referral, 1% ops), fully on-chain settlement.",
 "modal.title":"Connect Wallet","modal.desc":"Pick a wallet. BSC only (testnet chainId 97; mainnet 56 after launch). We will never ask for your private key, seed phrase or password.","modal.cancel":"Cancel",
 "footer.text":"QIANKUN ARENA · $SI On-Chain Prediction v1<br>Price: Binance first · Bitget backup · Gate fallback · Settlement anchor: Chainlink BTC/USD (on-chain)",
-"chart.title":"📈 BTC/USDT · 1m Candles","chart.up":"Up","chart.down":"Down","chart.waiting":"Waiting for price feed…",
+"chart.title":"📈 BTC/USDT · 1m Candles","chart.titleLine":"📈 BTC/USDT · Live Line","chart.line":"Line","chart.candles":"Candles","chart.startPrice":"Start Price","road.title":"🎲 Road","road.longWin":"Long won","road.shortWin":"Short won","road.draw":"Draw","road.empty":"No settled rounds yet","win.long":"LONG WINS","win.short":"SHORT WINS","win.draw":"Draw · Refunded","chart.up":"Up","chart.down":"Down","chart.waiting":"Waiting for price feed…",
 "chart.win":"WIN","chart.lose":"LOSE","chart.draw":"DRAW","chart.lockPrice":"LOCK","chart.closePrice":"CLOSE",
 "phase.betting":"Betting Open","phase.locked":"Locked · Settling",
 "cd.cutoff":"Betting Closes In","cd.locked":"Betting Closed","cd.lockSoon":"Betting stops 15s before lock — confirm soon",
@@ -903,6 +926,8 @@ const S = {
   odds: { long: 0, short: 0 }, oddsLive: false,
   powerPct: 50, prevDom: null, prevPrice: null,
   candles: [], chartLock: null, chartClose: null, chartResult: null,
+  ticks: [], cdSec: null, viewWin: null,
+  chartType: (function () { try { return localStorage.getItem("dk_chart_type") || "line"; } catch (e) { return "line"; } })(),
 };
 function saveBets() { localStorage.setItem("dk_bets_v1", JSON.stringify(S.myBets)); }
 function saveRounds() { localStorage.setItem("dk_rounds_v1", JSON.stringify(S.rounds)); }
@@ -965,6 +990,8 @@ function notePrice(p, fromSim) {
   }
   S.prevPrice = p;
   intakeCandle(p);
+  S.ticks.push({ t: Date.now(), p });
+  while (S.ticks.length && S.ticks[0].t < Date.now() - 900000) S.ticks.shift();
   $("curPrice2").textContent = fmtPrice(p);
   if (S.lockPrice) {
     const d = (p - S.lockPrice) / S.lockPrice * 100;
@@ -1186,6 +1213,8 @@ function roundTitle(id) {
 function tickRound() {
   if (S.contract && chainRound) { tickChainRound(); return; }
   const r = currentRound();
+  S.viewWin = { start: r.start, end: r.end };
+  S.cdSec = r.nowSec < r.lockAt ? r.lockAt - r.nowSec : r.end - r.nowSec;
   if (r.roundId !== lastRoundId) {
     if (lastRoundId !== null) settlePrevRound(lastRoundId);
     lastRoundId = r.roundId;
@@ -1264,6 +1293,8 @@ function tickChainRound() {
   }
   const cutoff = r.lockTime - CONFIG.BET_CUTOFF_SEC;
   const bettingOpen = nowSec < cutoff && r.status === 0;
+  S.viewWin = { start: r.startTime || (r.lockTime - (S.mode === "speed" ? 60 : 300)), end: r.closeTime };
+  S.cdSec = bettingOpen ? cutoff - nowSec : r.closeTime - nowSec;
   const phase = bettingOpen ? "betting" : "locked";
   if (phase !== lastPhase) {
     lastPhase = phase;
@@ -1326,6 +1357,8 @@ function settlePrevRound(prevId) {
   S.chartClose = close ? { price: close, time: Date.now() / 1000 } : null;
   S.chartResult = myWin ? "win" : myLose ? "lose" : (rec.result === "draw" ? "draw" : null);
   flashScreen();
+  showResultBanner(rec.result);
+  renderRoad();
   if (myWin) celebrateWin();
   else if (myLose) shockwaveLose();
   drawKline();
@@ -2047,6 +2080,7 @@ async function seedKlines() {
       if (rows.length < 10) continue;
       const live = S.candles.filter((c) => c.t > rows[rows.length - 1].t);
       S.candles = rows.concat(live).slice(-KLINE.max);
+      if (!S.ticks.length) S.ticks = rows.map((c) => ({ t: c.t + 59000, p: c.c }));
       KLINE.dirty = true;
       drawKline();
       return;
@@ -2058,11 +2092,11 @@ function sizeKline() {
   if (!cv) return;
   const dpr = window.devicePixelRatio || 1;
   const w = cv.clientWidth || (cv.parentElement && cv.parentElement.clientWidth) || 480;
-  const h = 160;
+  const h = 190;
   const W = Math.round(w * dpr), H = Math.round(h * dpr);
   if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
 }
-function drawKline() {
+function drawCandles() {
   const cv = $("kline");
   if (!cv) return;
   sizeKline();
@@ -2187,6 +2221,142 @@ function drawKline() {
   }
 }
 
+function drawKline() { if (S.chartType === "line") drawLine(); else drawCandles(); }
+function setChartType(tp) {
+  S.chartType = tp === "candle" ? "candle" : "line";
+  try { localStorage.setItem("dk_chart_type", S.chartType); } catch (e) {}
+  const l = $("ctLine"), c = $("ctCandle");
+  if (l) l.classList.toggle("sel", S.chartType === "line");
+  if (c) c.classList.toggle("sel", S.chartType === "candle");
+  const h = document.querySelector("#chartCard h2");
+  if (h) h.textContent = S.chartType === "line" ? t("chart.titleLine") : t("chart.title");
+  drawKline();
+}
+function drawLine() {
+  const cv = $("kline");
+  if (!cv) return;
+  sizeKline();
+  const ctx = cv.getContext("2d");
+  const dpr = window.devicePixelRatio || 1;
+  const W = cv.width / dpr, H = cv.height / dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, W, H);
+  const em = $("chartEmpty");
+  const now = Date.now();
+  const win = S.viewWin;
+  const t0 = win ? win.start * 1000 : now - 300000;
+  const t1 = win ? win.end * 1000 : now + 60000;
+  const pts = S.ticks.filter((k) => k.t >= t0 - 30000 && k.t <= now + 1000);
+  if (pts.length < 2 || !S.price) { if (em) em.classList.remove("hide"); return; }
+  if (em) em.classList.add("hide");
+  const padR = 66, padL = 6, padT = 18, padB = 18;
+  let hi = -Infinity, lo = Infinity;
+  for (const k of pts) { if (k.p > hi) hi = k.p; if (k.p < lo) lo = k.p; }
+  if (S.chartLock) { hi = Math.max(hi, S.chartLock.price); lo = Math.min(lo, S.chartLock.price); }
+  hi = Math.max(hi, S.price); lo = Math.min(lo, S.price);
+  const rng0 = (hi - lo) || 1;
+  hi += rng0 * 0.08; lo -= rng0 * 0.08;
+  const y = (v) => padT + (1 - (v - lo) / (hi - lo)) * (H - padT - padB);
+  const x0 = padL, x1 = W - padR;
+  const tx = (ms) => x0 + Math.max(0, Math.min(1, (ms - t0) / (t1 - t0))) * (x1 - x0);
+  ctx.font = "10px sans-serif";
+  ctx.textBaseline = "middle";
+  ctx.strokeStyle = "rgba(35,44,68,.9)";
+  ctx.fillStyle = "#8b96ad";
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 3; i++) {
+    const v = lo + (hi - lo) * i / 3;
+    const yy = y(v);
+    ctx.beginPath(); ctx.moveTo(x0, yy); ctx.lineTo(x1, yy); ctx.stroke();
+    ctx.textAlign = "left";
+    ctx.fillText(fmtPrice(v).replace("$", ""), x1 + 5, yy);
+  }
+  if (S.chartLock) {
+    const yy = y(S.chartLock.price);
+    ctx.fillStyle = "rgba(255,77,109,.05)";
+    ctx.fillRect(x0, padT, x1 - x0, Math.max(0, yy - padT));
+    ctx.fillStyle = "rgba(47,191,113,.05)";
+    ctx.fillRect(x0, yy, x1 - x0, Math.max(0, H - padB - yy));
+    ctx.setLineDash([6, 4]);
+    ctx.strokeStyle = "#d8b45a";
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(x0, yy); ctx.lineTo(x1, yy); ctx.stroke();
+    ctx.setLineDash([]);
+    const label = fmtPrice(S.chartLock.price).replace("$", "") + " " + t("chart.startPrice");
+    ctx.font = "bold 10px sans-serif";
+    const tw = ctx.measureText(label).width + 10;
+    const lx = Math.min(Math.max(tx(S.chartLock.time * 1000), x0), x1 - tw);
+    ctx.fillStyle = "#d8b45a";
+    ctx.fillRect(lx, yy + 6, tw, 16);
+    ctx.fillStyle = "#171204";
+    ctx.textAlign = "center";
+    ctx.fillText(label, lx + tw / 2, yy + 14);
+    ctx.font = "10px sans-serif";
+  }
+  const hx = tx(Math.min(now, t1)), hy = y(S.price);
+  ctx.beginPath();
+  pts.forEach((k, i) => { const X = tx(k.t), Y = y(k.p); if (i === 0) ctx.moveTo(X, Y); else ctx.lineTo(X, Y); });
+  ctx.lineTo(hx, hy);
+  ctx.strokeStyle = "#ff8c42";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.lineTo(hx, H - padB);
+  ctx.lineTo(tx(pts[0].t), H - padB);
+  ctx.closePath();
+  ctx.fillStyle = "rgba(255,140,66,.07)";
+  ctx.fill();
+  ctx.beginPath(); ctx.arc(hx, hy, 7, 0, Math.PI * 2); ctx.fillStyle = "rgba(255,255,255,.25)"; ctx.fill();
+  ctx.beginPath(); ctx.arc(hx, hy, 3.5, 0, Math.PI * 2); ctx.fillStyle = "#fff"; ctx.fill();
+  const pv = fmtPrice(S.price).replace("$", "");
+  ctx.font = "bold 10px sans-serif";
+  const pw = ctx.measureText(pv).width + 8;
+  ctx.fillStyle = "#f5c542";
+  ctx.fillRect(x1 + 2, hy - 8, pw, 16);
+  ctx.fillStyle = "#171204";
+  ctx.textAlign = "center";
+  ctx.fillText(pv, x1 + 2 + pw / 2, hy);
+  if (S.cdSec !== null && S.cdSec !== undefined && S.cdSec >= 0) {
+    const label = S.cdSec + "s";
+    ctx.font = "bold 11px sans-serif";
+    const bw = ctx.measureText(label).width + 14;
+    const bx = Math.max(x0, Math.min(hx - bw / 2, x1 - bw));
+    const by = Math.max(2, hy - 36);
+    ctx.fillStyle = "#ff8c42";
+    ctx.fillRect(bx, by, bw, 18);
+    ctx.beginPath(); ctx.moveTo(hx - 4, by + 18); ctx.lineTo(hx + 4, by + 18); ctx.lineTo(hx, by + 23); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = "#fff";
+    ctx.textAlign = "center";
+    ctx.fillText(label, bx + bw / 2, by + 9);
+  }
+  ctx.fillStyle = "#5d6a86";
+  ctx.font = "10px sans-serif";
+  ctx.textAlign = "left";
+  const fmtT = (ms) => new Date(ms).toLocaleTimeString(LANG === "zh" ? "zh-CN" : "en-US", { hour12: false });
+  ctx.fillText(fmtT(t0), x0, H - 8);
+  ctx.textAlign = "right";
+  ctx.fillText(fmtT(t1), x1, H - 8);
+}
+function renderRoad() {
+  const g = $("roadGrid");
+  if (!g) return;
+  const rs = (S.rounds || []).filter((r) => r.result).slice(0, 36).reverse();
+  if (!rs.length) { g.innerHTML = '<span class="road-empty">' + t("road.empty") + "</span>"; return; }
+  g.innerHTML = rs.map((r) => '<span class="rdot ' + r.result + '"></span>').join("");
+}
+function showResultBanner(result) {
+  if (!result) return;
+  let b = $("resultBanner");
+  if (!b) {
+    b = document.createElement("div");
+    b.id = "resultBanner";
+    document.body.appendChild(b);
+  }
+  b.className = "result-banner show " + result;
+  b.textContent = result === "draw" ? t("win.draw") : result === "long" ? "🔴 " + t("win.long") : "🟢 " + t("win.short");
+  clearTimeout(showResultBanner._tm);
+  showResultBanner._tm = setTimeout(() => { b.classList.remove("show"); }, 1800);
+}
+
 /* ---------------- 入场仪式（纯展示闪屏，1.2 秒内自动走） ----------------
    logo 已在 HTML 里内联了自己的 base64 src，不再从 .hero-badge 复制；
    内容默认可见（CSS 不再 opacity:0），JS 只做进场动画；0.8 秒自动进入，
@@ -2217,6 +2387,8 @@ function bindUI() {
   $("modeSpeed").onclick = () => setMode("speed");
   $("modeClassic").onclick = () => setMode("classic");
   $("connectBtn").onclick = quickConnect;
+  $("ctLine").onclick = () => setChartType("line");
+  $("ctCandle").onclick = () => setChartType("candle");
   $("modalClose").onclick = closeWalletModal;
   $("walletModal").onclick = (e) => { if (e.target === $("walletModal")) closeWalletModal(); };
   $("pickLong").onclick = () => setSide("long");
@@ -2328,8 +2500,10 @@ function init() {
   safeStep("fx", initFx);
   safeStep("bgmUI", initBgmUI);
   safeStep("i18n", applyI18n);
+  safeStep("chartType", () => setChartType(S.chartType));
   safeStep("pools", renderPools);
   safeStep("records", renderRecords);
+  safeStep("road", renderRoad);
   safeStep("refLink", updateRefLink);
   safeStep("calc", updateCalc);
   safeStep("betBtn", updateBetBtn);
@@ -2342,7 +2516,7 @@ function init() {
   setInterval(tickRound, 1000);
   setInterval(refreshPools, 15000);
   setInterval(() => { if (S.contract) discoverRound().then(() => { refreshPools(); }); }, 15000);
-  setInterval(() => { if (KLINE.dirty) { drawKline(); KLINE.dirty = false; } }, 500);
+  setInterval(() => { if (KLINE.dirty || S.chartType === "line") { drawKline(); KLINE.dirty = false; } }, 500);
   window.addEventListener("resize", () => { sizeKline(); drawKline(); });
 }
 document.addEventListener("DOMContentLoaded", init);
