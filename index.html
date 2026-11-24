@@ -342,6 +342,23 @@ body{padding-bottom:78px}
 .tabbar button.on{color:#f5c542}
 .tabbar .tb-center .tb-ico{display:grid;place-items:center;width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#f0d48a,#c39a2e);color:#171204;font-size:22px;margin-top:-28px;box-shadow:0 8px 22px rgba(216,180,90,.5);border:3px solid #07090f}
 .tabbar .tb-center{color:#f0d48a;font-weight:800}
+/* 一屏完整：紧凑首屏 */
+.topbar{padding:8px 0 2px;gap:6px}
+.logo-name{font-size:19px}
+.logo-sub{font-size:9px}
+.price{font-size:21px}
+.mini-btn{padding:5px 9px;font-size:12px}
+.vol{width:58px}
+.btn-connect{padding:7px 13px;font-size:13px}
+.stats{margin-top:8px;gap:8px}
+.stat{padding:6px 8px}
+.stat-v{font-size:16px}
+.stat-k{font-size:11px}
+.road-card{margin-top:8px;padding:7px 12px;background:linear-gradient(180deg,#0d1119,#090c12)}
+.chart-card{margin-top:8px;background:linear-gradient(180deg,#0d1119,#090c12)}
+#kline{height:158px}
+.ct-btn{white-space:nowrap;padding:4px 11px;font-size:12px}
+#betPanel{padding:11px 12px}
 .sheet{position:fixed;inset:0;z-index:200;background:rgba(4,6,12,.62);display:none;align-items:flex-end;justify-content:center}
 .sheet.open{display:flex}
 .sheet-card{background:#0e1219;border:1px solid var(--line);border-radius:18px 18px 0 0;padding:18px 16px calc(16px + env(safe-area-inset-bottom));width:100%;max-width:520px}
@@ -1029,9 +1046,15 @@ function intakeTrade(isBuy, price, qty) {
   notePrice(price);
   updatePower();
 }
+let _suspectTick = null;
 function notePrice(p, fromSim) {
   // 真行情一到就停模拟价，马上换真价；模拟 tick 自己带 fromSim=true，不会自己停自己
   if (!fromSim) stopSim();
+  // 异常跳变过滤：单笔偏离上价 >0.5% 先扣下，下一笔同向确认才放行，防喂价切换的坏 tick 把图轴拉扁
+  if (!fromSim && S.price && Math.abs(p - S.price) / S.price > 0.005) {
+    if (_suspectTick && Math.abs(p - _suspectTick) / _suspectTick < 0.001) _suspectTick = null;
+    else { _suspectTick = p; return; }
+  } else _suspectTick = null;
   S.price = p;
   const pel = $("price");
   pel.textContent = fmtPrice(p);
@@ -1447,6 +1470,7 @@ function settlePrevRound(prevId) {
   try { localStorage.setItem("dk_stats_v1", JSON.stringify(S.stats)); } catch (e) {}
   S.lastSettledId = prevId;
   renderStats();
+  if (S.contract) refreshChainStats();
   if (window.__bgBurst) window.__bgBurst(rec.result);
   const csS = $("chartState"); if (csS) csS.textContent = t("state.settling");
   if (myWin) celebrateWin();
@@ -1697,6 +1721,8 @@ async function connectWallet(w) {
     if (TOKEN_NOT_CONFIGURED) { toast(t("toast.tokenNotConfigured")); $("siBalance").textContent = t("wallet.tokenNotConfigured"); }
     if (CONFIG.CONTRACT_ADDRESS) {
       S.contract = new ethers.Contract(CONFIG.CONTRACT_ADDRESS, BATTLE_ABI, S.signer);
+      refreshChainStats();
+      if (!window._csTimer) window._csTimer = setInterval(refreshChainStats, 60000);
       discoverRound().then(() => { refreshPools(); tickRound(); });
     }
     $("connectBtn").textContent = S.account.slice(0, 6) + "…" + S.account.slice(-4);
@@ -2256,6 +2282,17 @@ function bgmSchedule() {
     BGM.nextTime += beat;
   }
 }
+/* 首次点按任意处即解锁/拉起音乐（移动端 WebView 自动播放策略） */
+document.addEventListener("pointerdown", () => {
+  try {
+    if (BGM.muted) return;
+    if (BGM.ctx && BGM.ctx.state === "suspended") BGM.ctx.resume();
+    else if (!BGM.on) startBgm();
+  } catch (e) {}
+}, true);
+document.addEventListener("visibilitychange", () => {
+  try { if (!document.hidden && BGM.ctx && BGM.ctx.state === "suspended" && !BGM.muted) BGM.ctx.resume(); } catch (e) {}
+});
 function startBgm() {
   if (!bgmEnsure()) return;
   if (BGM.ctx.state === "suspended") BGM.ctx.resume();
@@ -2541,8 +2578,18 @@ function drawLine() {
   if (pts.length < 2 || !S.price) { if (em) em.classList.remove("hide"); return; }
   if (em) em.classList.add("hide");
   const padR = 66, padL = 6, padT = 18, padB = 18;
+  const winPrices = [];
+  for (const k of pts) if (k.t >= t0) winPrices.push(k.p);
   let hi = -Infinity, lo = Infinity;
-  for (const k of pts) { if (k.t >= t0) { if (k.p > hi) hi = k.p; if (k.p < lo) lo = k.p; } }
+  if (winPrices.length >= 8) {
+    const srt = [...winPrices].sort((a, b) => a - b);
+    const q1 = srt[Math.floor(srt.length * 0.25)], q3 = srt[Math.floor(srt.length * 0.75)];
+    const iqr = Math.max(q3 - q1, S.price * 0.0002);
+    const fHi = q3 + 3 * iqr, fLo = q1 - 3 * iqr;
+    for (const p of winPrices) { if (p <= fHi && p > hi) hi = p; if (p >= fLo && p < lo) lo = p; }
+  } else {
+    for (const p of winPrices) { if (p > hi) hi = p; if (p < lo) lo = p; }
+  }
   if (!isFinite(hi)) { hi = S.price; lo = S.price; }
   if (S.chartLock) { hi = Math.max(hi, S.chartLock.price); lo = Math.min(lo, S.chartLock.price); }
   hi = Math.max(hi, S.price); lo = Math.min(lo, S.price);
@@ -2646,10 +2693,45 @@ function drawLine() {
   ctx.textAlign = "right";
   ctx.fillText(fmtT(t1), x1, H - 8);
 }
+let chainStatsBusy = false;
+async function refreshChainStats() {
+  if (!S.contract || chainStatsBusy) return;
+  chainStatsBusy = true;
+  try {
+    const token = CONFIG.TOKENS.SI.addressesByChain[CONFIG.CHAIN_ID];
+    let cache = { scanned: { 0: 0, 1: 0, 2: 0 }, paid: 0, settled: 0 };
+    try { cache = JSON.parse(localStorage.getItem("dk_stats_chain_v1") || "null") || cache; } catch (e) {}
+    if (!cache.scanned) cache = { scanned: { 0: 0, 1: 0, 2: 0 }, paid: 0, settled: 0 };
+    for (const m of [0, 1, 2]) {
+      const latest = Number(await S.contract.latestRoundId(m, token));
+      let from = Math.max(cache.scanned[m] || 0, latest - 400);
+      for (let id = from + 1; id <= latest; id += 20) {
+        const batch = [];
+        for (let j = id; j < Math.min(id + 20, latest + 1); j++) batch.push(S.contract.getRound(j));
+        const rounds = await Promise.all(batch);
+        for (const r of rounds) {
+          if (Number(r.status) === 2) {
+            cache.settled++;
+            cache.paid += Number(ethers.formatUnits(r.longPool + r.shortPool, 18));
+          }
+        }
+        cache.scanned[m] = Math.min(id + 19, latest);
+      }
+    }
+    S.chainStats = { rounds: cache.settled, paid: cache.paid };
+    try { localStorage.setItem("dk_stats_chain_v1", JSON.stringify(cache)); } catch (e) {}
+    renderStats();
+  } catch (e) { /* 链上统计失败时继续用本地见证数 */ }
+  chainStatsBusy = false;
+}
 function renderStats() {
   const r = $("statRounds"), p = $("statPool");
-  if (r) r.textContent = S.stats.rounds > 0 ? String(S.stats.rounds) : "—";
-  if (p) p.textContent = S.stats.paid > 0 ? fmt(Math.round(S.stats.paid)) + " $SI" : "—";
+  if (!r || !p) return;
+  const cs = S.chainStats;
+  const rounds = cs ? cs.rounds : S.stats.rounds;
+  const paid = cs ? cs.paid : S.stats.paid;
+  r.textContent = rounds > 0 ? String(rounds) : "—";
+  p.textContent = cs ? fmt(Math.round(paid)) + " $SI" : (paid > 0 ? fmt(Math.round(paid)) + " $SI" : "—");
 }
 function renderRoad() {
   const g = $("roadGrid");
