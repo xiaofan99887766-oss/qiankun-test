@@ -2460,7 +2460,7 @@ function sizeKline() {
   if (!cv) return;
   const dpr = window.devicePixelRatio || 1;
   const w = cv.clientWidth || (cv.parentElement && cv.parentElement.clientWidth) || 480;
-  const h = 190;
+  const h = cv.clientHeight || 190;
   const W = Math.round(w * dpr), H = Math.round(h * dpr);
   if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
 }
@@ -2652,8 +2652,8 @@ function drawLine() {
   const padV = Math.max((hi - lo) * 0.07, S.price * 0.000025);
   hi += padV; lo -= padV;
   if (!S.axis) S.axis = { hi, lo };
-  S.axis.hi += (hi - S.axis.hi) * 0.6;
-  S.axis.lo += (lo - S.axis.lo) * 0.6;
+  S.axis.hi += (hi - S.axis.hi) * 0.22;
+  S.axis.lo += (lo - S.axis.lo) * 0.22;
   hi = S.axis.hi; lo = S.axis.lo;
   const y = (v) => padT + (1 - (v - lo) / (hi - lo)) * (H - padT - padB);
   const x0 = padL, x1 = W - padR;
@@ -2715,8 +2715,14 @@ function drawLine() {
     ctx.font = "10px sans-serif";
   }
   const hx = tx(Math.min(now, t1)), hy = y(S.price);
+  const sm = pts.map((k, i) => {
+    const a = pts[Math.max(0, i - 1)], b = pts[Math.min(pts.length - 1, i + 1)];
+    return { t: k.t, p: (a.p + k.p * 2 + b.p) / 4 };
+  });
   ctx.beginPath();
-  pts.forEach((k, i) => { const X = tx(k.t), Y = y(k.p); if (i === 0) ctx.moveTo(X, Y); else ctx.lineTo(X, Y); });
+  ctx.lineJoin = "round";
+  ctx.lineCap = "round";
+  sm.forEach((k, i) => { const X = tx(k.t), Y = y(k.p); if (i === 0) ctx.moveTo(X, Y); else ctx.lineTo(X, Y); });
   ctx.shadowBlur = 0;
   ctx.lineTo(hx, hy);
   ctx.strokeStyle = S.phase === "locked" ? "#d7f75b" : "#ffa02e";
@@ -2725,7 +2731,7 @@ function drawLine() {
   ctx.shadowBlur = 5;
   ctx.stroke();
   ctx.lineTo(hx, H - padB);
-  ctx.lineTo(tx(pts[0].t), H - padB);
+  ctx.lineTo(tx(sm[0].t), H - padB);
   ctx.closePath();
   ctx.fillStyle = S.phase === "locked" ? "rgba(200,230,74,.07)" : "rgba(255,140,66,.07)";
   ctx.fill();
