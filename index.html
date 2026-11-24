@@ -2659,6 +2659,10 @@ function drawLine() {
     const firstLive = livePts.length ? livePts[0].t : Infinity;
     pts = base.filter((k) => k.t < firstLive - 1000).concat(livePts);
     if (pts.length < 8) pts = livePts.length ? livePts : base;
+    if (S.price) {
+      const capHi = S.price * 1.003, capLo = S.price * 0.997;
+      pts = pts.map((k) => ({ t: k.t, p: Math.min(capHi, Math.max(capLo, k.p)) }));
+    }
   }
   // 轴钳制：窗口内价格先按四分位距收边，单个坏 tick 被压回正常带，画不出满幅针
   {
